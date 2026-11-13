@@ -26,6 +26,15 @@
   <img src="docs/assets/states.svg" width="700" alt="Working, needs you, done, seen and error states">
 </p>
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/hover-card-dark.svg">
+    <img src="docs/assets/hover-card-light.svg" width="700" alt="Hovering over the icon shows every session: two need you, one is done, one is working">
+  </picture>
+  <br>
+  <sub>Hover over the icon to see every session and what it needs.</sub>
+</p>
+
 ## Why
 
 Claude Code sessions run in the background while you do something else. When one stops to ask for

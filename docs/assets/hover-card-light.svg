@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 378" width="700" height="378" role="img" aria-label="Hover card of Attention Buddy listing four sessions: two need you, one is done, one is working">
+  <title>Attention Buddy hover card (example sessions; mascot artwork © Anthropic, see NOTICE)</title>
+  <defs>
+    <style>
+      text { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Helvetica, Arial, sans-serif; }
+      @keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: .3 } }
+      .icon { animation: pulse 1s ease-in-out infinite; }
+      @media (prefers-reduced-motion: reduce) { .icon { animation: none; } }
+    </style>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="6" stdDeviation="9" flood-color="#000" flood-opacity="0.18"/></filter>
+  </defs>
+  <g class="icon" transform="translate(314.0 28) scale(3)"><path fill="#E5484D" fill-rule="evenodd" d="M20.998 10.949H24v3.102h-3v3.028h-1.487V20H18v-2.921h-1.487V20H15v-2.921H9V20H7.488v-2.921H6V20H4.487v-2.921H3V14.05H0V10.95h3V5h17.998v5.949zM6 10.949h1.488V8.102H6v2.847zm10.51 0H18V8.102h-1.49v2.847z"/></g>
+  <rect x="190.0" y="96" width="320" height="258" rx="10" fill="#FFFFFF" stroke="#E3E3E6" filter="url(#shadow)"/>
+  <text x="204.0" y="125" font-size="12" font-weight="600" fill="#6E6E73">2 sessions need you</text>
+  <circle cx="208.0" cy="152" r="4" fill="#E5484D"/>
+  <text x="220.0" y="157" font-size="14" font-weight="500" fill="#1D1D1F">Refactor payment module</text>
+  <text x="220.0" y="174" font-size="12" fill="#6E6E73">Needs your approval for Bash</text>
+  <circle cx="208.0" cy="196" r="4" fill="#E5484D"/>
+  <text x="220.0" y="201" font-size="14" font-weight="500" fill="#1D1D1F">Write release notes</text>
+  <text x="220.0" y="218" font-size="12" fill="#6E6E73">Has a question for you</text>
+  <circle cx="208.0" cy="240" r="4" fill="#46A758"/>
+  <text x="220.0" y="245" font-size="14" font-weight="500" fill="#1D1D1F">Fix flaky login test</text>
+  <text x="220.0" y="262" font-size="12" fill="#6E6E73">Done</text>
+  <circle cx="208.0" cy="284" r="4" fill="#D97757"/>
+  <text x="220.0" y="289" font-size="14" font-weight="500" fill="#1D1D1F">Migrate to Swift 6</text>
+  <text x="220.0" y="306" font-size="12" fill="#6E6E73">Working</text>
+  <text x="204.0" y="331" font-size="11" fill="#A1A1A6">Click to open · Right-click for options</text>
+</svg>
