@@ -3,6 +3,11 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+- Documentation: "seen" also covers opening the card with a click; the design doc lists the
+  card-dot tests and calls the card the session card everywhere.
+
 ## [0.1.4] - 2026-11-14
 
 - Clicking the icon now opens the session card (as hovering does) and keeps it open until you

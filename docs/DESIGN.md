@@ -201,7 +201,7 @@ shoulders and squash pivots between the feet. All animation runs in Core Animati
   a published interface; if they change, rows simply become unclickable.
 - **Right-click:** a menu of actions only: Show waiting sessions, Mark all as seen, Forget all
   sessions, Settings…, About Attention Buddy (opens the project page) and Quit. The sessions
-  themselves are listed in the hover card. No item has an icon, so all of them line up. macOS 26
+  themselves are listed in the session card. No item has an icon, so all of them line up. macOS 26
   adds a symbol on its own to items whose action name looks standard (an action named
   `openSettings` gets a gear and indents its whole group), so the Settings item's action has the
   neutral name `openConfigurationWindow`; a test guards this.
@@ -292,7 +292,7 @@ module; `#if canImport(...)` guards skip the cross-module imports SwiftPM needs.
 | Layer | Tool | What it covers |
 | --- | --- | --- |
 | Core logic | Swift Testing (`Tests/AttentionCoreTests`) | State files, priority, the seen timer with a fixed clock, animation scheduling, dead-process cleanup, settings and the size range, placement (default spot, unplugged screens, the card, resizing without drift), card content and openable rows, desktop session ids and links, when the card opens and closes, the single-instance lock, `doctor` |
-| Icon | Swift Testing (`Tests/AttentionUITests`) | Geometry, styles, animation definitions, layer setup, rendered pixels (state colors, transparent eye holes, the raised arm), the session card and its clickable rows, the Settings slider, and resizing the real window without clipping |
+| Icon | Swift Testing (`Tests/AttentionUITests`) | Geometry, styles, animation definitions, layer setup, rendered pixels (state colors, transparent eye holes, the raised arm), the session card, its clickable rows and dot animations (including Reduce Motion), the Settings slider, and resizing the real window without clipping |
 | Hook script | bats (`ShellTests/hook.bats`) | Every event, tool-call matching (including answered questions), safe session ids, broken input, missing `jq`, 50 parallel events, stale locks, speed |
 | Installers and plugin | bats (`ShellTests/install.bats`) | Fresh install, keeping other hooks, running twice, removal, broken settings, plugin detection, dry run, uninstall, Homebrew paths, the plugin start script |
 | Repository | bats (`ShellTests/repo.bats`) | Versions match, the plugin name is allowed, every local documentation link works, the privacy check passes |

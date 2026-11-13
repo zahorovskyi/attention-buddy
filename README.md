@@ -57,7 +57,7 @@ while Claude works and starts blinking red and waving the moment any session nee
 | --- | --- | --- |
 | **Working** | dim clay color, legs stepping | Claude is working |
 | **Needs you** | red, blinking, jumps and waves every 15 s | a session asks for approval, asks a question, or an MCP server needs input |
-| **Seen** | steady red | you looked at Claude but have not answered yet; goes back to blinking after 3 minutes |
+| **Seen** | steady red | you looked (switched to Claude or clicked the icon) but have not answered yet; goes back to blinking after 3 minutes |
 | **Done** | green, one happy hop | a session finished its turn |
 | **Error** | red, shakes its head | a turn failed, for example on an API error |
 

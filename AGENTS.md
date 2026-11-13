@@ -16,8 +16,8 @@ icon. Full design: [docs/DESIGN.md](docs/DESIGN.md).
 ## Explaining it to a user
 
 - **States:** dim clay and stepping while Claude works; red, blinking, jumping and waving when a
-  session needs an approval, an answer or MCP input; steady red ("seen") once the user looked at
-  Claude, back to blinking after 3 minutes; green with a hop when a turn is done; red with a head
+  session needs an approval, an answer or MCP input; steady red ("seen") once the user looked
+  (switched to Claude or clicked the icon), back to blinking after 3 minutes; green with a hop when a turn is done; red with a head
   shake when a turn failed. With several sessions it shows the most urgent one.
 - **Using it:** drag it anywhere (it starts at the bottom-right corner, above the Dock); hover or
   click it to open a card listing every session and what it needs; click a session in the card to
