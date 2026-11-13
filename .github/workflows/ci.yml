@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  swift:
+    name: Swift build, tests and format
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show toolchain
+        run: swift --version
+      - name: Format
+        run: swift format lint --strict -r Sources Tests Package.swift
+      - name: Build
+        run: swift build
+      - name: Tests
+        run: swift test
+      - name: Installer build (plain swiftc)
+        run: scripts/build.sh && build/attention-buddy --version
+
+  shell:
+    name: Shell lint, tests and privacy
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install tools
+        run: brew install shellcheck bats-core gitleaks jq
+      - name: Shellcheck
+        run: shellcheck -s sh install.sh scripts/*.sh hooks/*.sh
+      - name: Shell tests
+        run: bats ShellTests
+      - name: Privacy check
+        run: scripts/check-privacy.sh
+      - name: Secret scan
+        run: gitleaks git --redact --no-banner .
+
+  plugin:
+    name: Claude Code plugin validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate plugin and marketplace
+        run: npx -y @anthropic-ai/claude-code plugin validate .

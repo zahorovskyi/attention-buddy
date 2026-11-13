@@ -1,0 +1,20 @@
+{
+  "name": "attention-buddy",
+  "displayName": "Attention Buddy",
+  "version": "0.1.0",
+  "description": "A floating Claude Code icon on your macOS desktop that jumps and waves when a session needs you.",
+  "author": {
+    "name": "zahorovskyi",
+    "url": "https://github.com/zahorovskyi"
+  },
+  "homepage": "https://github.com/zahorovskyi/attention-buddy",
+  "repository": "https://github.com/zahorovskyi/attention-buddy",
+  "license": "MIT",
+  "keywords": [
+    "macos",
+    "notifications",
+    "attention",
+    "hooks",
+    "productivity"
+  ]
+}

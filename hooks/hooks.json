@@ -1,0 +1,23 @@
+{
+  "description": "Attention Buddy: records each session's state for the floating icon and starts the icon.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/attention-buddy-hook.sh\"", "timeout": 10 },
+          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/plugin-start.sh\"", "timeout": 10 }
+        ]
+      }
+    ],
+    "SessionEnd": [{ "hooks": [{ "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/attention-buddy-hook.sh\"", "timeout": 10 }] }],
+    "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/attention-buddy-hook.sh\"", "timeout": 10 }] }],
+    "PermissionRequest": [{ "hooks": [{ "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/attention-buddy-hook.sh\"", "timeout": 10 }] }],
+    "PermissionDenied": [{ "hooks": [{ "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/attention-buddy-hook.sh\"", "timeout": 10 }] }],
+    "PostToolUse": [{ "hooks": [{ "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/attention-buddy-hook.sh\"", "timeout": 10 }] }],
+    "PostToolUseFailure": [{ "hooks": [{ "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/attention-buddy-hook.sh\"", "timeout": 10 }] }],
+    "Elicitation": [{ "hooks": [{ "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/attention-buddy-hook.sh\"", "timeout": 10 }] }],
+    "ElicitationResult": [{ "hooks": [{ "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/attention-buddy-hook.sh\"", "timeout": 10 }] }],
+    "Stop": [{ "hooks": [{ "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/attention-buddy-hook.sh\"", "timeout": 10 }] }],
+    "StopFailure": [{ "hooks": [{ "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/attention-buddy-hook.sh\"", "timeout": 10 }] }]
+  }
+}

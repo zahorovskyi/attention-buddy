@@ -1,0 +1,23 @@
+# Attention Buddy
+
+> A small native macOS app that shows a floating, draggable Claude Code mascot. It watches every Claude Code session through hooks and turns red, blinks, jumps and waves when a session needs the user (an approval, a question or MCP input), turns green when a turn is done, and stays calm while Claude works. Silent, no network access, stores no prompt or code content. MIT licensed; not affiliated with Anthropic.
+
+Install with one of: the Claude Code plugin (`/plugin marketplace add zahorovskyi/attention-buddy`), Homebrew (`brew install zahorovskyi/tap/attention-buddy`), or the install script. Requires macOS 13+, the Xcode Command Line Tools and jq. Verify with `attention-buddy doctor`.
+
+## Docs
+
+- [README](https://raw.githubusercontent.com/zahorovskyi/attention-buddy/main/README.md): what it is, states, install methods, usage, what it changes, uninstall, troubleshooting
+- [AGENTS.md](https://raw.githubusercontent.com/zahorovskyi/attention-buddy/main/AGENTS.md): how an agent should explain, install, verify and uninstall it, and how to work on the code
+- [Design](https://raw.githubusercontent.com/zahorovskyi/attention-buddy/main/docs/DESIGN.md): architecture, hook events, state rules, animations, install methods, decisions and limits
+
+## Source
+
+- [Hook script](https://raw.githubusercontent.com/zahorovskyi/attention-buddy/main/hooks/attention-buddy-hook.sh): turns Claude Code hook events into per-session state files
+- [Installer](https://raw.githubusercontent.com/zahorovskyi/attention-buddy/main/install.sh): one-line and clone install, uninstall, hooks setup
+- [Plugin manifest](https://raw.githubusercontent.com/zahorovskyi/attention-buddy/main/.claude-plugin/plugin.json): Claude Code plugin definition
+
+## Optional
+
+- [Changelog](https://raw.githubusercontent.com/zahorovskyi/attention-buddy/main/CHANGELOG.md)
+- [Contributing](https://raw.githubusercontent.com/zahorovskyi/attention-buddy/main/CONTRIBUTING.md)
+- [Homebrew formula](https://raw.githubusercontent.com/zahorovskyi/homebrew-tap/main/Formula/attention-buddy.rb)

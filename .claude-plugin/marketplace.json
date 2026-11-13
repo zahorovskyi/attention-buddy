@@ -1,0 +1,17 @@
+{
+  "name": "attention-buddy",
+  "owner": {
+    "name": "zahorovskyi",
+    "url": "https://github.com/zahorovskyi"
+  },
+  "description": "Attention Buddy: a floating macOS icon that shows when a Claude Code session needs you.",
+  "plugins": [
+    {
+      "name": "attention-buddy",
+      "source": "./",
+      "description": "A floating Claude Code icon on your macOS desktop that jumps and waves when a session needs you.",
+      "category": "productivity",
+      "tags": ["macos", "notifications", "attention"]
+    }
+  ]
+}

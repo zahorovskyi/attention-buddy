@@ -1,0 +1,8 @@
+.build/
+build/
+.swiftpm/
+*.xcodeproj/
+DerivedData/
+.DS_Store
+# Optional local list of extra words for scripts/check-privacy.sh; never committed.
+.privacy-denylist
