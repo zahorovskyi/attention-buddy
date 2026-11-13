@@ -182,7 +182,10 @@ shoulders and squash pivots between the feet. All animation runs in Core Animati
   reads the same text from the icon.
 - **Right-click:** a menu of actions only: Show waiting sessions, Mark all as seen, Forget all
   sessions, Settings…, About Attention Buddy (opens the project page) and Quit. The sessions
-  themselves are listed in the hover card.
+  themselves are listed in the hover card. No item has an icon, so all of them line up. macOS 26
+  adds a symbol on its own to items whose action name looks standard (an action named
+  `openSettings` gets a gear and indents its whole group), so the Settings item's action has the
+  neutral name `openConfigurationWindow`; a test guards this.
 - **Settings…:** a small regular window; the app activates only while it is open. Its slider sets
   the icon scale from 1.5 to 6 points per icon pixel, shown as 1× to 4×, and applies live. Each
   change builds an icon view of the new size and resizes the window before attaching it, because

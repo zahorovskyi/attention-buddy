@@ -319,3 +319,32 @@ struct FloatingPanelResizeTests {
         #expect(panel.frame.minY == before.minY)
     }
 }
+
+@MainActor
+@Suite("Right-click menu")
+struct MenuTests {
+    private func makeController() -> AppController {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("attention-buddy-menu-\(UUID())")
+        let defaults = UserDefaults(suiteName: "attention-buddy-menu-\(UUID().uuidString)") ?? .standard
+        return AppController(store: SessionStore(directory: directory), settings: .standard, preferences: defaults)
+    }
+
+    @Test("The menu holds only these actions, in this order")
+    func items() {
+        let titles = makeController().makeMenu().items.map { $0.isSeparatorItem ? "-" : $0.title }
+        #expect(
+            titles == [
+                "Show waiting sessions", "Mark all as seen", "Forget all sessions", "-", "Settings…",
+                "About Attention Buddy \(AppVersion.current)", "Quit",
+            ])
+    }
+
+    @Test("No item has an icon, and no action name invites macOS to add one")
+    func noIcons() {
+        for item in makeController().makeMenu().items where !item.isSeparatorItem {
+            #expect(item.image == nil)
+            let action = item.action.map(NSStringFromSelector)?.lowercased() ?? ""
+            #expect(!action.contains("settings") && !action.contains("preferences"), "\(item.title): \(action)")
+        }
+    }
+}

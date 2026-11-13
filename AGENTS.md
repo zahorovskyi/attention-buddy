@@ -119,6 +119,8 @@ Rules:
   stays testable.
 - Swift 6 language mode; UI code is `@MainActor`. No force unwraps, no third-party dependencies.
 - Prefer explicit, readable code over clever operators.
+- Menu item actions get neutral names (never `openSettings`, `showPreferences` and the like):
+  macOS 26 adds icons to items with standard-looking action names, which misaligns the menu.
 - Shell scripts are POSIX `sh`, `shellcheck` clean, with every variable quoted.
 - The hook script must never print, never fail and stay fast; it runs on every tool call.
 - Every new event or state needs tests (Swift and bats) and an update to `docs/DESIGN.md`.

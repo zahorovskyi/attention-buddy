@@ -104,7 +104,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
         savePosition()
     }
 
-    @objc private func openSettings() {
+    /// Opens the Settings window. Deliberately not named `openSettings`: see `makeMenu()`.
+    @objc private func openConfigurationWindow() {
         if settingsWindow == nil {
             let window = SettingsWindow(scale: settings.scale)
             window.onScaleChange = { [weak self] scale in self?.resizeIcon(to: scale) }
@@ -211,17 +212,26 @@ public final class AppController: NSObject, NSApplicationDelegate {
         guard let iconView else {
             return
         }
-        // The sessions themselves live in the hover card; the menu only holds actions.
+        NSMenu.popUpContextMenu(makeMenu(), with: event, for: iconView)
+    }
+
+    /// The right-click menu. The sessions themselves live in the hover card; the menu only holds
+    /// actions, all without icons so every item lines up.
+    ///
+    /// Action names matter: macOS 26 adds a symbol on its own to items whose action looks like a
+    /// standard one (an action named `openSettings` gets a gear), which indents the whole group.
+    /// So the Settings item uses the neutral name `openConfigurationWindow`.
+    func makeMenu() -> NSMenu {
         let menu = NSMenu()
         menu.autoenablesItems = false
         menu.addItem(actionItem("Show waiting sessions", #selector(showWaitingSessions)))
         menu.addItem(actionItem("Mark all as seen", #selector(markAllSeen)))
         menu.addItem(actionItem("Forget all sessions", #selector(forgetSessions)))
         menu.addItem(.separator())
-        menu.addItem(actionItem("Settings…", #selector(openSettings)))
+        menu.addItem(actionItem("Settings…", #selector(openConfigurationWindow)))
         menu.addItem(actionItem("About Attention Buddy \(AppVersion.current)", #selector(openAbout)))
         menu.addItem(actionItem("Quit", #selector(quit)))
-        NSMenu.popUpContextMenu(menu, with: event, for: iconView)
+        return menu
     }
 
     @objc private func openAbout() {

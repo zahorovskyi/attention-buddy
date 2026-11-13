@@ -3,8 +3,9 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [0.1.3] - 2026-11-13
 
+- The right-click menu no longer shows a gear next to "Settings…", so all items line up.
 - `doctor` now explains how to start the icon again for each install method.
 - Documentation: how to restart the icon after Quit, `doctor` for plugin installs, the
   preferences file, cleaning up after a plugin or Homebrew uninstall, and a full list of
