@@ -28,9 +28,10 @@ icon. Full design: [docs/DESIGN.md](docs/DESIGN.md).
   (`seenTimeout`, `repeatInterval`) are `defaults write io.github.zahorovskyi.attention-buddy …`
   values; see the README.
 - **Privacy:** no network access; only the event name, session id, tool name, folder and session
-  title are stored, never prompts, code or output. To open sessions it reads (never changes) the
-  desktop app's session list in `~/Library/Application Support/Claude/claude-code-sessions/`,
-  using only the session ids.
+  title are stored, never prompts, code or output. To open sessions and show their current names,
+  it reads (never changes) the desktop app's session list in
+  `~/Library/Application Support/Claude/claude-code-sessions/`, using only the session ids and
+  titles.
 
 ## Helping a user install it
 
@@ -93,7 +94,7 @@ Layout:
 ```
 Sources/AttentionCore/     pure logic, no AppKit: state files, priority, seen timer, animation scheduler,
                            settings and size range, placement, card content and open/close rules,
-                           desktop session ids and links, single-instance lock, doctor
+                           desktop session ids, titles and links, single-instance lock, doctor
 Sources/AttentionUI/       AppKit + Core Animation: floating window, icon layers and animations, session card,
                            Settings window, state folder watcher, app controller, PNG snapshots
 Sources/attention-buddy/   command-line entry point (run, setup, doctor, snapshot)

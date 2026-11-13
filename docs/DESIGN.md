@@ -121,7 +121,7 @@ file. A lock left behind by a crashed run is taken over after two seconds.
 
 Only the event name, session id, tool name, working folder and session title are stored. Prompts,
 code and tool output are never written anywhere. To open sessions, the app also reads the desktop
-app's session files (see Interaction), using only the two ids in each.
+app's session files (see Interaction), using only the two ids and the title in each.
 
 ## What the icon shows
 
@@ -199,6 +199,13 @@ shoulders and squash pivots between the feet. All animation runs in Core Animati
   skipped) and maps `cliSessionId` to `sessionId`, checking ids with the same pattern the app
   uses. It rescans at most every 5 seconds when it meets an unknown session. These files are not
   a published interface; if they change, rows simply become unclickable.
+- **Session names:** the card shows the name the user gave a session in the desktop app. No hook
+  reports a rename (Claude Code only passes the title along with the next prompt), so the index
+  also keeps each session's `title` and file. While the card is open, each refresh checks the
+  modification time of the shown sessions' files and re-reads only the ones that changed, so a
+  rename appears within about half a second. With the card closed nothing is read; VoiceOver uses
+  the titles already read. Terminal sessions, and desktop sessions without a title, keep the
+  title from hook events, then the folder name.
 - **Right-click:** a menu of actions only: Show waiting sessions, Mark all as seen, Forget all
   sessions, Settings…, About Attention Buddy (opens the project page) and Quit. The sessions
   themselves are listed in the session card. No item has an icon, so all of them line up. macOS 26
@@ -284,14 +291,15 @@ module; `#if canImport(...)` guards skip the cross-module imports SwiftPM needs.
 - After approving a long-running tool, the session stays "needs you" (or "seen" once you looked)
   until the tool finishes, because no event arrives in between.
 - Only desktop app sessions can be opened from the card; terminal sessions are listed but can't
-  be focused. Mapping sessions relies on the desktop app's internal session files, so a Claude
-  update could stop rows from opening until Attention Buddy is updated.
+  be focused. Mapping sessions and their names relies on the desktop app's internal session
+  files, so a Claude update could stop rows from opening (and the card would show the names from
+  hook events) until Attention Buddy is updated.
 
 ## Testing
 
 | Layer | Tool | What it covers |
 | --- | --- | --- |
-| Core logic | Swift Testing (`Tests/AttentionCoreTests`) | State files, priority, the seen timer with a fixed clock, animation scheduling, dead-process cleanup, settings and the size range, placement (default spot, unplugged screens, the card, resizing without drift), card content and openable rows, desktop session ids and links, when the card opens and closes, the single-instance lock, `doctor` |
+| Core logic | Swift Testing (`Tests/AttentionCoreTests`) | State files, priority, the seen timer with a fixed clock, animation scheduling, dead-process cleanup, settings and the size range, placement (default spot, unplugged screens, the card, resizing without drift), card content and openable rows, desktop session ids, titles, renames and links, when the card opens and closes, the single-instance lock, `doctor` |
 | Icon | Swift Testing (`Tests/AttentionUITests`) | Geometry, styles, animation definitions, layer setup, rendered pixels (state colors, transparent eye holes, the raised arm), the session card, its clickable rows and dot animations (including Reduce Motion), the Settings slider, and resizing the real window without clipping |
 | Hook script | bats (`ShellTests/hook.bats`) | Every event, tool-call matching (including answered questions), safe session ids, broken input, missing `jq`, 50 parallel events, stale locks, speed |
 | Installers and plugin | bats (`ShellTests/install.bats`) | Fresh install, keeping other hooks, running twice, removal, broken settings, plugin detection, dry run, uninstall, Homebrew paths, the plugin start script |

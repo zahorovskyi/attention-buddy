@@ -194,10 +194,21 @@ public final class AppController: NSObject, NSApplicationDelegate {
         guard let frame = panel?.frame else {
             return
         }
-        let content = HoverCardContent.make(from: resolved) { [desktopSessions] session in
+        let content = HoverCardContent.make(from: withDesktopTitles(resolved, refresh: true)) {
+            [desktopSessions] session in
             desktopSessions.desktopID(for: session.id) != nil
         }
         hoverCard.show(content, near: frame)
+    }
+
+    /// Uses the title the user gave a session in the Claude desktop app, which no hook reports,
+    /// so a rename shows up while the card is open. `refresh` re-reads files that changed.
+    private func withDesktopTitles(
+        _ entries: [(session: SessionRecord, state: IconState)],
+        refresh: Bool
+    ) -> [(session: SessionRecord, state: IconState)] {
+        let titled = desktopSessions.applyingDesktopTitles(to: entries.map(\.session), refresh: refresh)
+        return zip(titled, entries).map { (session: $0, state: $1.state) }
     }
 
     /// Opens one session in the Claude desktop app and closes the card.
@@ -235,8 +246,9 @@ public final class AppController: NSObject, NSApplicationDelegate {
         if let animation = update.animation {
             iconView?.play(animation)
         }
-        // VoiceOver reads the same text the hover card shows.
-        let description = StateText.tooltip(for: resolved)
+        // VoiceOver reads the same text the session card shows. Titles already read from the
+        // desktop app are used, but files are only re-read while the card is open.
+        let description = StateText.tooltip(for: withDesktopTitles(resolved, refresh: false))
         if iconView?.accessibilityLabel() != description {
             iconView?.setAccessibilityLabel(description)
         }

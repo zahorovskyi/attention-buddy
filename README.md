@@ -86,63 +86,24 @@ The full design, including every event and decision, is in [docs/DESIGN.md](docs
 `jq` (included in macOS 15 and later; otherwise `brew install jq`). Attention Buddy builds from
 source on your Mac, so there is no unsigned download to approve.
 
-Pick **one** method.
+Pick **one** method:
 
-<details open>
-<summary><b>Claude Code plugin</b>: no terminal needed</summary>
+| Method | Install with | The icon starts |
+| --- | --- | --- |
+| **Claude Code plugin** (no terminal) | In Claude Code:<br>`/plugin marketplace add zahorovskyi/attention-buddy`<br>`/plugin install attention-buddy@attention-buddy` | with each Claude Code session |
+| **One-line install** | `curl -fsSL https://raw.githubusercontent.com/zahorovskyi/attention-buddy/main/install.sh \| sh` | at login |
+| **From a clone** | `git clone https://github.com/zahorovskyi/attention-buddy.git`<br>`cd attention-buddy && ./install.sh` | at login |
+| **Homebrew** | `brew install zahorovskyi/tap/attention-buddy`<br>`attention-buddy setup`<br>`brew services start attention-buddy` | at login |
 
-In Claude Code, run:
-
-```
-/plugin marketplace add zahorovskyi/attention-buddy
-/plugin install attention-buddy@attention-buddy
-```
-
-The plugin brings its own hooks. On your next session start it builds the icon in the background
-(about 10 seconds) and starts it. The icon starts with each Claude Code session.
-
-</details>
-
-<details>
-<summary><b>One-line install</b>: starts at login</summary>
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/zahorovskyi/attention-buddy/main/install.sh | sh
-```
-
-This downloads the latest release, builds it, installs `~/.local/bin/attention-buddy`, adds the
-hooks to `~/.claude/settings.json` (after making a backup) and starts the icon at login.
-Prefer to read it first? Download [install.sh](install.sh), read it, then run `sh install.sh`.
-Add `--dry-run` to see what it would change.
-
-</details>
-
-<details>
-<summary><b>From a clone</b></summary>
-
-```bash
-git clone https://github.com/zahorovskyi/attention-buddy.git
-cd attention-buddy
-./install.sh
-```
-
-Same result as the one-line install, built from your clone.
-
-</details>
-
-<details>
-<summary><b>Homebrew</b></summary>
-
-```bash
-brew install zahorovskyi/tap/attention-buddy
-attention-buddy setup
-brew services start attention-buddy
-```
-
-`setup` adds the hooks to `~/.claude/settings.json` (with a backup). `brew services` starts the
-icon now and at every login.
-
-</details>
+- **Plugin:** it brings its own hooks. On your next session start it builds the icon in the
+  background (about 10 seconds) and starts it.
+- **One-line install and clone:** they build the app, install `~/.local/bin/attention-buddy`, add
+  the hooks to `~/.claude/settings.json` (after making a backup) and add a login item. The
+  one-line install downloads the latest release first. Prefer to read it before running? Download
+  [install.sh](install.sh), read it, then run `sh install.sh`; add `--dry-run` to see what it
+  would change.
+- **Homebrew:** `setup` adds the hooks to `~/.claude/settings.json` (with a backup), and
+  `brew services` starts the icon now and at every login.
 
 Check that everything is connected:
 
@@ -161,6 +122,8 @@ With the plugin, the app is not on your `PATH`; run it from the plugin's data fo
   choose something or click elsewhere.
 - **Click a session** in the card to open exactly that session in the Claude desktop app. Terminal
   sessions are listed too, marked "in a terminal", but can't be opened from the card.
+- **Renamed a session** in Claude Desktop? The open card shows the new name within about half a
+  second. (No hook reports renames, so the card reads the name from the desktop app.)
 - In the card, the **dot** of a session that needs you **blinks red**, a working session's dot
   breathes slowly, and the others stay steady.
 - **Right-click** it for "Show waiting sessions", "Mark all as seen", "Forget all sessions",
@@ -201,17 +164,19 @@ After **Quit**, the icon stays closed until you start it:
 | Session state | `~/.claude/attention-buddy/` | same | same |
 | Preferences (position, size) | `~/Library/Preferences/io.github.zahorovskyi.attention-buddy.plist` | same | same |
 
-Nothing else. No network access, no telemetry, no accounts. To open the session you click, the
-app also reads (never changes) the Claude desktop app's list of sessions in
-`~/Library/Application Support/Claude/claude-code-sessions/`, and uses only each session's ids.
+Nothing else. No network access, no telemetry, no accounts. To open the session you click and
+show its current name, the app also reads (never changes) the Claude desktop app's list of
+sessions in `~/Library/Application Support/Claude/claude-code-sessions/`, and uses only each
+session's ids and title.
 
 ## Uninstall
 
-| Installed with | Remove with |
+| Method | Remove with |
 | --- | --- |
-| Plugin | `/plugin uninstall attention-buddy`, then right-click the icon and choose Quit |
-| Install script | `sh ~/.local/share/attention-buddy/install.sh --uninstall` |
-| Homebrew | `attention-buddy setup --remove`, `brew services stop attention-buddy`, `brew uninstall attention-buddy` |
+| **Claude Code plugin** | In Claude Code:<br>`/plugin uninstall attention-buddy`<br>then right-click the icon and choose Quit |
+| **One-line install** | `sh ~/.local/share/attention-buddy/install.sh --uninstall` |
+| **From a clone** | `./install.sh --uninstall` (in the clone), or the same command as the one-line install |
+| **Homebrew** | `attention-buddy setup --remove`<br>`brew services stop attention-buddy`<br>`brew uninstall attention-buddy` |
 
 The install script also deletes the session state and preferences. After removing the plugin or
 the Homebrew formula, delete them yourself if you like:

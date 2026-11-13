@@ -3,8 +3,11 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [0.1.5] - 2026-11-14
 
+- The card shows a session's current name from Claude Desktop: a rename appears within about
+  half a second while the card is open, instead of after your next message in that session.
+- README: Install and Uninstall are now matching tables, one row per install method.
 - Documentation: "seen" also covers opening the card with a click; the design doc lists the
   card-dot tests and calls the card the session card everywhere.
 
