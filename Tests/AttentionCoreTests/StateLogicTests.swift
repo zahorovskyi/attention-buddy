@@ -182,10 +182,12 @@ struct SettingsTests {
 
 @Suite("Icon size")
 struct IconSizeTests {
-    @Test("The size runs from the original size up to four times bigger")
+    @Test("The size runs from 1× up to four times bigger, and new installs start at 2×")
     func range() {
-        #expect(AttentionSettings.scaleRange.lowerBound == AttentionSettings.standard.scale)
-        #expect(AttentionSettings.scaleRange.upperBound == AttentionSettings.standard.scale * 4)
+        let smallest = AttentionSettings.scaleRange.lowerBound
+        #expect(AttentionSettings.scaleRange.upperBound == smallest * 4)
+        #expect(AttentionSettings.standard.scale == smallest * 2)
+        #expect(AttentionSettings.sizeLabel(forScale: AttentionSettings.standard.scale) == "2×")
     }
 
     @Test("Saved sizes outside the range are clamped", arguments: [(0.5, 1.5), (3.0, 3.0), (100.0, 6.0)])

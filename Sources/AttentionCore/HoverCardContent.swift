@@ -1,14 +1,20 @@
-/// What the hover card shows: a one-line summary and one row per session.
+/// What the session card shows: a one-line summary and one row per session.
 public struct HoverCardContent: Equatable, Sendable {
     public struct Row: Equatable, Sendable {
         public var title: String
         public var detail: String
         public var state: IconState
+        /// The Claude Code session id, used to open the session when the row is clicked.
+        public var sessionID: String
+        /// Whether clicking the row can open the session (only desktop app sessions can).
+        public var canOpen: Bool
 
-        public init(title: String, detail: String, state: IconState) {
+        public init(title: String, detail: String, state: IconState, sessionID: String = "", canOpen: Bool = false) {
             self.title = title
             self.detail = detail
             self.state = state
+            self.sessionID = sessionID
+            self.canOpen = canOpen
         }
     }
 
@@ -24,15 +30,25 @@ public struct HoverCardContent: Equatable, Sendable {
     }
 
     /// Builds the card from sessions that are already sorted most urgent first.
+    /// `canOpen` says which sessions the Claude desktop app can open; the others are marked
+    /// "in a terminal" and can't be clicked.
     public static func make(
         from resolved: [(session: SessionRecord, state: IconState)],
-        limit: Int = 6
+        limit: Int = 6,
+        canOpen: (SessionRecord) -> Bool = { _ in false }
     ) -> HoverCardContent {
         let rows = resolved.prefix(limit).map { entry in
-            Row(
+            let openable = canOpen(entry.session)
+            var detail = StateText.detail(for: entry.session, state: entry.state)
+            if !openable {
+                detail += " · in a terminal"
+            }
+            return Row(
                 title: entry.session.displayName,
-                detail: StateText.detail(for: entry.session, state: entry.state),
-                state: entry.state)
+                detail: detail,
+                state: entry.state,
+                sessionID: entry.session.id,
+                canOpen: openable)
         }
         var overflow: String?
         let hidden = resolved.count - rows.count

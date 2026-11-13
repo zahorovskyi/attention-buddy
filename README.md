@@ -29,10 +29,10 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/hover-card-dark.svg">
-    <img src="docs/assets/hover-card-light.svg" width="700" alt="Hovering over the icon shows every session: two need you, one is done, one is working">
+    <img src="docs/assets/hover-card-light.svg" width="700" alt="The session card: two sessions need you, one is done, one works in a terminal; click a session to open it">
   </picture>
   <br>
-  <sub>Hover over the icon to see every session and what it needs.</sub>
+  <sub>Hover over or click the icon to see every session, then click one to open it.</sub>
 </p>
 
 ## Why
@@ -49,6 +49,7 @@ while Claude works and starts blinking red and waving the moment any session nee
 - **Yours to place and size.** Drag it anywhere; make it up to four times bigger in Settings.
 - **Tiny and native.** One small Swift app, no web runtime, near-zero CPU.
 - **Private.** No network access. It never reads your prompts, code or tool output.
+- **One click to the right session.** Pick any session from the card and Claude opens it.
 
 ## What it shows
 
@@ -155,14 +156,18 @@ With the plugin, the app is not on your `PATH`; run it from the plugin's data fo
 ## Using it
 
 - **Drag** the icon anywhere. It remembers the spot, even across restarts and display changes.
-- **Click** it to jump to Claude. When something is waiting, it opens Claude's "Sessions waiting
-  for you" list in the desktop app.
+- **Hover** or **click** it to see every session and what it needs. Hovering opens the card after
+  a moment and closes it when you move away; clicking opens it at once and keeps it open until you
+  choose something or click elsewhere.
+- **Click a session** in the card to open exactly that session in the Claude desktop app. Terminal
+  sessions are listed too, marked "in a terminal", but can't be opened from the card.
+- In the card, the **dot** of a session that needs you **blinks red**, a working session's dot
+  breathes slowly, and the others stay steady.
 - **Right-click** it for "Show waiting sessions", "Mark all as seen", "Forget all sessions",
   "Settings…", "About Attention Buddy" (opens this page) and "Quit".
 - It starts near the **bottom-right corner** of your screen, just above the Dock.
-- **Hover** to see a card with every session and what it needs.
-- **Resize** it in Settings…: a slider from the original size (1×) up to four times bigger (4×).
-  The icon changes live as you drag. It grows away from its nearest screen corner, so it stays in
+- **Resize** it in Settings…: a slider from the smallest size (1×) up to four times bigger (4×);
+  it starts at 2×. The icon changes live as you drag. It grows away from its nearest screen corner, so it stays in
   place, and it keeps its size.
 
 Advanced settings, from a terminal:
@@ -196,7 +201,9 @@ After **Quit**, the icon stays closed until you start it:
 | Session state | `~/.claude/attention-buddy/` | same | same |
 | Preferences (position, size) | `~/Library/Preferences/io.github.zahorovskyi.attention-buddy.plist` | same | same |
 
-Nothing else. No network access, no telemetry, no accounts.
+Nothing else. No network access, no telemetry, no accounts. To open the session you click, the
+app also reads (never changes) the Claude desktop app's list of sessions in
+`~/Library/Application Support/Claude/claude-code-sessions/`, and uses only each session's ids.
 
 ## Uninstall
 

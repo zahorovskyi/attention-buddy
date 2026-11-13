@@ -18,6 +18,17 @@ public enum IconAnimations {
         return animation
     }
 
+    /// A slow, gentle fade for a working session's dot in the card.
+    public static func breathe() -> CAKeyframeAnimation {
+        let animation = CAKeyframeAnimation(keyPath: "opacity")
+        animation.values = [1, 0.45, 1]
+        animation.keyTimes = [0, 0.5, 1]
+        animation.duration = 2.4
+        animation.repeatCount = .infinity
+        animation.timingFunctions = [easeInOut, easeInOut]
+        return animation
+    }
+
     /// Moves one pair of legs up and down; the two pairs use opposite phases ("working").
     public static func step(phase: Int, scale: CGFloat) -> CAKeyframeAnimation {
         let lift = -1 * scale

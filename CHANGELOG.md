@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org).
 
+## [0.1.4] - 2026-11-14
+
+- Clicking the icon now opens the session card (as hovering does) and keeps it open until you
+  choose something or click elsewhere.
+- Click a session in the card to open exactly that session in the Claude desktop app. Terminal
+  sessions are listed as "in a terminal" and can't be opened from the card.
+- The card stays open while you move the pointer from the icon onto it.
+- In the card, dots of sessions that need you blink red and working dots breathe slowly.
+- New installs start at 2× the previous icon size (the slider still runs from 1× to 4×; a size
+  you already chose is kept).
+
 ## [0.1.3] - 2026-11-13
 
 - The right-click menu no longer shows a gear next to "Settings…", so all items line up.

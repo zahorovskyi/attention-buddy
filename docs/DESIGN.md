@@ -120,7 +120,8 @@ file. A lock left behind by a crashed run is taken over after two seconds.
 - The app tolerates missing or unknown fields, so newer hook scripts never break older apps.
 
 Only the event name, session id, tool name, working folder and session title are stored. Prompts,
-code and tool output are never written anywhere.
+code and tool output are never written anywhere. To open sessions, the app also reads the desktop
+app's session files (see Interaction), using only the two ids in each.
 
 ## What the icon shows
 
@@ -172,14 +173,32 @@ shoulders and squash pivots between the feet. All animation runs in Core Animati
 
 ## Interaction
 
-- **Click:** marks every waiting session as seen. If something needs attention (needs you, seen or
-  error) it opens the desktop app's "Sessions waiting for you" list (`claude://code/needs-input`);
-  otherwise it brings the Claude desktop app to the front.
-- **Hover:** after a short pause a card appears (a separate borderless panel with the system
-  popover material). It has a summary line and one row per session, most urgent first: a dot in
-  the state's color, the session name and what it needs, up to six rows plus "+N more sessions".
-  It sits below the icon, or above it near the bottom of the screen, and updates live. VoiceOver
-  reads the same text from the icon.
+- **The session card** (a separate borderless panel with the system popover material) has a
+  summary line and one row per session, most urgent first: a dot in the state's color, the session
+  name and what it needs, up to six rows plus "+N more sessions". It sits below the icon, or above
+  it near the bottom of the screen, and updates live. VoiceOver reads the same text from the icon.
+- **Card dots** follow the icon's rhythm: a "needs you" dot blinks red with the icon's 1-second
+  pulse (kept with Reduce Motion, as the main signal), a working dot breathes slowly (2.4 s, off
+  with Reduce Motion), and seen, done, error and idle dots stay steady.
+- **When the card opens and closes** is decided by `CardPresenter`, a small state machine:
+  - Hover: the card opens after 0.35 s and closes 0.25 s after the pointer has left both the icon
+    and the card, so moving from the icon onto the card keeps it open.
+  - Click on the icon: the card opens at once and is pinned. It stays open until the icon is
+    clicked again, a session is chosen, or the user clicks anywhere else (a global mouse monitor
+    sees clicks in other apps; it needs no special permission). Dragging the icon, resizing it or
+    opening the menu also closes it. The click also marks every waiting session as seen.
+- **Choosing a session:** rows of desktop app sessions highlight under the pointer, show a `›` and
+  open that exact session: `claude://code/needs-input?session=local_…` for a waiting session,
+  `claude://code/continue?session=local_…` otherwise. The chosen session is marked as seen.
+  Sessions the desktop app doesn't know (terminal sessions) are dimmed, marked "in a terminal"
+  and can't be clicked. If a link can't be built at click time, the app just brings Claude to the
+  front.
+- **Desktop session ids:** hook events carry Claude Code's session id; the desktop links need the
+  app's own `local_…` id. `DesktopSessionIndex` reads the desktop app's per-session files in
+  `~/Library/Application Support/Claude/claude-code-sessions/` (read-only, files over 5 MB
+  skipped) and maps `cliSessionId` to `sessionId`, checking ids with the same pattern the app
+  uses. It rescans at most every 5 seconds when it meets an unknown session. These files are not
+  a published interface; if they change, rows simply become unclickable.
 - **Right-click:** a menu of actions only: Show waiting sessions, Mark all as seen, Forget all
   sessions, Settings…, About Attention Buddy (opens the project page) and Quit. The sessions
   themselves are listed in the hover card. No item has an icon, so all of them line up. macOS 26
@@ -187,7 +206,8 @@ shoulders and squash pivots between the feet. All animation runs in Core Animati
   `openSettings` gets a gear and indents its whole group), so the Settings item's action has the
   neutral name `openConfigurationWindow`; a test guards this.
 - **Settings…:** a small regular window; the app activates only while it is open. Its slider sets
-  the icon scale from 1.5 to 6 points per icon pixel, shown as 1× to 4×, and applies live. Each
+  the icon scale from 1.5 to 6 points per icon pixel, shown as 1× to 4×, and applies live. New
+  installs start at 3 (2×). Each
   change builds an icon view of the new size and resizes the window before attaching it, because
   attaching a view to a window first shrinks the view to the old window size and clips it. The
   edges nearest the screen corner stay fixed, so the icon grows away from its corner, shrinking
@@ -204,7 +224,7 @@ its range when read, so a hand-edited value can't break the app.
 | Key | Set by | Default | Range |
 | --- | --- | --- | --- |
 | `positionX`, `positionY` | dragging the icon | bottom-right corner | any spot on a connected screen |
-| `scale` | the Settings slider | 1.5 (1×) | 1.5 to 6 (1× to 4×) |
+| `scale` | the Settings slider | 3 (2×) | 1.5 to 6 (1× to 4×) |
 | `seenTimeout` | `defaults write` | 180 seconds | 10 to 3600 |
 | `repeatInterval` | `defaults write` | 15 seconds | 5 to 600 |
 
@@ -249,7 +269,8 @@ module; `#if canImport(...)` guards skip the cross-module imports SwiftPM needs.
 | Native Swift app | Electron or Tauri desktop pet apps; a Claude Code plugin pane | A web runtime to draw one icon is heavy. Plugin panes live inside the Claude window, but the icon must float over every app. |
 | Hook script in `sh` + `jq` | The Swift binary as the hook | A shell script starts in milliseconds; loading AppKit for every hook event would be slower. |
 | Files, watched with file system events plus a 0.5 s poll | Unix socket | Simplest, no daemon protocol, survives restarts; reacting to folder events is instant and reading a few small files costs almost nothing. |
-| Custom hover card | The system tooltip | System tooltips can't be styled; the card uses the popover material, follows light and dark mode, and shows a colored dot per session. |
+| Custom session card | The system tooltip | System tooltips can't be styled or clicked; the card uses the popover material, follows light and dark mode, shows a colored dot per session and opens the one you click. |
+| Hover and click both open the card | Click opens the most urgent session | Choosing the session yourself is predictable with several sessions; hover gives a quick look. |
 | Synchronous hooks | `async: true` | Event order matters more than the few milliseconds saved. |
 | `PermissionRequest` | `Notification` (`permission_prompt`) | Fires immediately instead of after about 6 seconds. |
 | Build from source | Prebuilt download | Unsigned downloads trigger Gatekeeper warnings; signing needs a paid developer account. |
@@ -262,15 +283,16 @@ module; `#if canImport(...)` guards skip the cross-module imports SwiftPM needs.
   reports this.
 - After approving a long-running tool, the session stays "needs you" (or "seen" once you looked)
   until the tool finishes, because no event arrives in between.
-- Clicking opens the desktop app's waiting-sessions list; terminal sessions are not focused
-  automatically.
+- Only desktop app sessions can be opened from the card; terminal sessions are listed but can't
+  be focused. Mapping sessions relies on the desktop app's internal session files, so a Claude
+  update could stop rows from opening until Attention Buddy is updated.
 
 ## Testing
 
 | Layer | Tool | What it covers |
 | --- | --- | --- |
-| Core logic | Swift Testing (`Tests/AttentionCoreTests`) | State files, priority, the seen timer with a fixed clock, animation scheduling, dead-process cleanup, settings and the size range, placement (default spot, unplugged screens, hover card, resizing without drift), hover card content, the single-instance lock, `doctor` |
-| Icon | Swift Testing (`Tests/AttentionUITests`) | Geometry, styles, animation definitions, layer setup, rendered pixels (state colors, transparent eye holes, the raised arm), the hover card, the Settings slider, and resizing the real window without clipping |
+| Core logic | Swift Testing (`Tests/AttentionCoreTests`) | State files, priority, the seen timer with a fixed clock, animation scheduling, dead-process cleanup, settings and the size range, placement (default spot, unplugged screens, the card, resizing without drift), card content and openable rows, desktop session ids and links, when the card opens and closes, the single-instance lock, `doctor` |
+| Icon | Swift Testing (`Tests/AttentionUITests`) | Geometry, styles, animation definitions, layer setup, rendered pixels (state colors, transparent eye holes, the raised arm), the session card and its clickable rows, the Settings slider, and resizing the real window without clipping |
 | Hook script | bats (`ShellTests/hook.bats`) | Every event, tool-call matching (including answered questions), safe session ids, broken input, missing `jq`, 50 parallel events, stale locks, speed |
 | Installers and plugin | bats (`ShellTests/install.bats`) | Fresh install, keeping other hooks, running twice, removal, broken settings, plugin detection, dry run, uninstall, Homebrew paths, the plugin start script |
 | Repository | bats (`ShellTests/repo.bats`) | Versions match, the plugin name is allowed, every local documentation link works, the privacy check passes |

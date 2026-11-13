@@ -12,7 +12,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     /// The Claude desktop app. Switching to it counts as "looking at" waiting sessions.
     public static let claudeBundleIdentifier = "com.anthropic.claudefordesktop"
     /// Opens Claude's "Sessions waiting for you" list.
-    public static let waitingSessionsURL = URL(string: "claude://code/needs-input")
+    public static let waitingSessionsURL = ClaudeLinks.waitingSessions
 
     private let store: SessionStore
     private var settings: AttentionSettings
@@ -27,7 +27,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private var timer: Timer?
     private let watcher = StateFolderWatcher()
     private let hoverCard = HoverCard()
-    private var hoverWork: DispatchWorkItem?
+    private var presenter = CardPresenter()
+    private var pendingCardWork: DispatchWorkItem?
+    private var outsideClickMonitor: Any?
+    private let desktopSessions = DesktopSessionIndex()
+    /// Pause before the card opens on hover, and grace period before it closes.
+    static let cardShowDelay: TimeInterval = 0.35
+    static let cardHideDelay: TimeInterval = 0.25
     /// Keeps macOS App Nap from slowing the icon's timers while it sits in the background.
     private var activity: NSObjectProtocol?
 
@@ -63,6 +69,25 @@ public final class AppController: NSObject, NSApplicationDelegate {
             self, selector: #selector(screensChanged),
             name: NSApplication.didChangeScreenParametersNotification, object: nil)
 
+        hoverCard.onPointerInside = { [weak self] inside in
+            guard let self else {
+                return
+            }
+            self.apply(inside ? self.presenter.pointerEnteredCard() : self.presenter.pointerExitedCard())
+        }
+        hoverCard.onSelectSession = { [weak self] sessionID in self?.openSession(sessionID) }
+        // Clicks in other apps close a pinned card. (Monitors never see this app's own clicks.)
+        outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else {
+                    return
+                }
+                self.apply(self.presenter.dismiss())
+            }
+        }
+
         refresh()
         try? FileManager.default.createDirectory(at: store.directory, withIntermediateDirectories: true)
         watcher.start(watching: store.directory) { [weak self] in
@@ -82,6 +107,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         view.onMoved = { [weak self] in self?.savePosition() }
         view.onMenu = { [weak self] event in self?.showMenu(for: event) }
         view.onHover = { [weak self] inside in self?.hoverChanged(inside) }
+        view.onDragBegan = { [weak self] in self?.dismissCard() }
         return view
     }
 
@@ -95,7 +121,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         settings.scale = scale
         preferences.set(scale, forKey: "scale")
 
-        hoverCard.hide()
+        dismissCard()
         let view = makeIconView(scale: scale)
         view.show(scheduler.current, animated: false, reduceMotion: reduceMotion)
         view.setAccessibilityLabel(iconView?.accessibilityLabel())
@@ -115,29 +141,78 @@ public final class AppController: NSObject, NSApplicationDelegate {
         settingsWindow?.show()
     }
 
-    // MARK: Hover card
+    // MARK: Session card
 
     private func hoverChanged(_ inside: Bool) {
-        hoverWork?.cancel()
-        hoverWork = nil
-        guard inside else {
-            hoverCard.hide()
-            return
-        }
-        let work = DispatchWorkItem { [weak self] in
-            MainActor.assumeIsolated {
-                self?.showHoverCard()
-            }
-        }
-        hoverWork = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35, execute: work)
+        apply(inside ? presenter.pointerEnteredIcon() : presenter.pointerExitedIcon())
     }
 
-    private func showHoverCard() {
+    private func dismissCard() {
+        apply(presenter.dismiss())
+    }
+
+    /// Carries out what `CardPresenter` decided.
+    private func apply(_ action: CardPresenter.Action) {
+        switch action {
+        case .none:
+            break
+        case .cancelPending:
+            cancelPendingCardWork()
+        case .scheduleShow:
+            schedule(after: Self.cardShowDelay) { $0.presenter.showDelayEnded() }
+        case .scheduleHide:
+            schedule(after: Self.cardHideDelay) { $0.presenter.hideDelayEnded() }
+        case .show:
+            cancelPendingCardWork()
+            showCard()
+        case .hide:
+            cancelPendingCardWork()
+            hoverCard.hide()
+        }
+    }
+
+    private func schedule(after delay: TimeInterval, _ decide: @escaping (AppController) -> CardPresenter.Action) {
+        cancelPendingCardWork()
+        let work = DispatchWorkItem { [weak self] in
+            MainActor.assumeIsolated {
+                guard let self else {
+                    return
+                }
+                self.apply(decide(self))
+            }
+        }
+        pendingCardWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
+    }
+
+    private func cancelPendingCardWork() {
+        pendingCardWork?.cancel()
+        pendingCardWork = nil
+    }
+
+    private func showCard() {
         guard let frame = panel?.frame else {
             return
         }
-        hoverCard.show(HoverCardContent.make(from: resolved), near: frame)
+        let content = HoverCardContent.make(from: resolved) { [desktopSessions] session in
+            desktopSessions.desktopID(for: session.id) != nil
+        }
+        hoverCard.show(content, near: frame)
+    }
+
+    /// Opens one session in the Claude desktop app and closes the card.
+    private func openSession(_ sessionID: String) {
+        dismissCard()
+        guard let session = sessions.first(where: { $0.id == sessionID }),
+            let desktopID = desktopSessions.desktopID(for: sessionID),
+            let url = ClaudeLinks.session(desktopID, isWaiting: session.status == .needs)
+        else {
+            activateClaude()
+            return
+        }
+        seen.markSeen([session], at: Date())
+        refresh()
+        NSWorkspace.shared.open(url)
     }
 
     // MARK: Refresh
@@ -166,7 +241,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             iconView?.setAccessibilityLabel(description)
         }
         if hoverCard.isVisible {
-            showHoverCard()
+            showCard()
         }
     }
 
@@ -196,14 +271,11 @@ public final class AppController: NSObject, NSApplicationDelegate {
         panel.setFrameOrigin(origin)
     }
 
+    /// A click opens (or closes) the session card, pinned open, and counts as looking at the
+    /// waiting sessions. Choosing a session in the card opens it in Claude.
     private func iconClicked() {
-        let needsAttention = [IconState.needsYou, .seen, .error].contains(scheduler.current)
         markWaitingSessionsSeen()
-        if needsAttention {
-            openWaitingSessions()
-        } else {
-            activateClaude()
-        }
+        apply(presenter.iconClicked())
     }
 
     // MARK: Menu
@@ -212,6 +284,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         guard let iconView else {
             return
         }
+        dismissCard()
         NSMenu.popUpContextMenu(makeMenu(), with: event, for: iconView)
     }
 

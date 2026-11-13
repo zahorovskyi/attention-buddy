@@ -30,8 +30,13 @@ struct HoverCardContentTests {
 
     @Test("Each session becomes a row with its name and what it needs")
     func rows() {
-        let content = HoverCardContent.make(from: [entry("a", .needsYou, title: "Fix login")])
-        #expect(content.rows == [.init(title: "Fix login", detail: "Needs your approval for Bash", state: .needsYou)])
+        let content = HoverCardContent.make(from: [entry("a", .needsYou, title: "Fix login")]) { _ in true }
+        #expect(
+            content.rows == [
+                .init(
+                    title: "Fix login", detail: "Needs your approval for Bash", state: .needsYou, sessionID: "a",
+                    canOpen: true)
+            ])
         #expect(content.overflow == nil)
     }
 

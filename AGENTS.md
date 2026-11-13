@@ -19,14 +19,18 @@ icon. Full design: [docs/DESIGN.md](docs/DESIGN.md).
   session needs an approval, an answer or MCP input; steady red ("seen") once the user looked at
   Claude, back to blinking after 3 minutes; green with a hop when a turn is done; red with a head
   shake when a turn failed. With several sessions it shows the most urgent one.
-- **Using it:** drag it anywhere (it starts at the bottom-right corner, above the Dock); hover to
-  see every session and what it needs; click to open Claude's waiting sessions; right-click for
-  Show waiting sessions, Mark all as seen, Forget all sessions, Settings…, About and Quit.
-- **Settings…:** an icon size slider from 1× (smallest) to 4×. Advanced timings
+- **Using it:** drag it anywhere (it starts at the bottom-right corner, above the Dock); hover or
+  click it to open a card listing every session and what it needs; click a session in the card to
+  open exactly that session in the Claude desktop app (terminal sessions are listed but can't be
+  opened); in the card, dots of sessions that need you blink red; right-click for Show waiting sessions, Mark all as seen, Forget all sessions,
+  Settings…, About and Quit.
+- **Settings…:** an icon size slider from 1× (smallest) to 4×; new installs start at 2×. Advanced timings
   (`seenTimeout`, `repeatInterval`) are `defaults write io.github.zahorovskyi.attention-buddy …`
   values; see the README.
 - **Privacy:** no network access; only the event name, session id, tool name, folder and session
-  title are stored, never prompts, code or output.
+  title are stored, never prompts, code or output. To open sessions it reads (never changes) the
+  desktop app's session list in `~/Library/Application Support/Claude/claude-code-sessions/`,
+  using only the session ids.
 
 ## Helping a user install it
 
@@ -88,8 +92,9 @@ Layout:
 
 ```
 Sources/AttentionCore/     pure logic, no AppKit: state files, priority, seen timer, animation scheduler,
-                           settings and size range, placement, hover card content, single-instance lock, doctor
-Sources/AttentionUI/       AppKit + Core Animation: floating window, icon layers and animations, hover card,
+                           settings and size range, placement, card content and open/close rules,
+                           desktop session ids and links, single-instance lock, doctor
+Sources/AttentionUI/       AppKit + Core Animation: floating window, icon layers and animations, session card,
                            Settings window, state folder watcher, app controller, PNG snapshots
 Sources/attention-buddy/   command-line entry point (run, setup, doctor, snapshot)
 Tests/                     Swift Testing suites

@@ -348,3 +348,80 @@ struct MenuTests {
         }
     }
 }
+
+@MainActor
+@Suite("Session card clicks")
+struct SessionCardClickTests {
+    private let content = HoverCardContent(
+        header: "1 session needs you",
+        rows: [
+            .init(
+                title: "Desktop task", detail: "Needs your approval for Bash", state: .needsYou, sessionID: "d1",
+                canOpen: true),
+            .init(
+                title: "api-server", detail: "Working · in a terminal", state: .working, sessionID: "t1", canOpen: false
+            ),
+        ],
+        overflow: nil)
+
+    @Test("Clicking a desktop session reports it; terminal sessions do nothing")
+    func rowClicks() {
+        let card = HoverCard()
+        var opened: [String] = []
+        card.onSelectSession = { opened.append($0) }
+        card.show(content, near: CGRect(x: 400, y: 400, width: 39, height: 32))
+        #expect(card.rowCount == 2)
+        card.rowViews[0].select()
+        card.rowViews[1].select()
+        #expect(opened == ["d1"])
+        card.hide()
+    }
+
+    @Test("Only openable rows highlight under the pointer and accept clicks")
+    func openableRowsTrackThePointer() {
+        let card = HoverCard()
+        card.show(content, near: CGRect(x: 400, y: 400, width: 39, height: 32))
+        card.rowViews.forEach { $0.updateTrackingAreas() }
+        #expect(!card.rowViews[0].trackingAreas.isEmpty)
+        #expect(card.rowViews[1].trackingAreas.isEmpty)
+        #expect(card.rowViews[0].accessibilityRole() == .button)
+        card.hide()
+    }
+}
+
+@MainActor
+@Suite("Card dots")
+struct CardDotTests {
+    private func row(_ state: IconState, reduceMotion: Bool = false) -> SessionRowView {
+        let data = HoverCardContent.Row(title: "Task", detail: "Detail", state: state, sessionID: "s", canOpen: true)
+        return SessionRowView(row: data, reduceMotion: reduceMotion) { text, _, _, _ in
+            NSTextField(labelWithString: text)
+        }
+    }
+
+    @Test("A session that needs you has a blinking red dot")
+    func needsYouBlinks() {
+        let view = row(.needsYou)
+        #expect(view.dot.layer?.animation(forKey: "pulse") != nil)
+        #expect(view.dot.layer?.backgroundColor == Palette.red)
+    }
+
+    @Test("A working session's dot breathes slowly")
+    func workingBreathes() {
+        #expect(row(.working).dot.layer?.animation(forKey: "breathe") != nil)
+        #expect(IconAnimations.breathe().duration > IconAnimations.pulse().duration)
+    }
+
+    @Test("Seen, done, error and idle dots stay steady", arguments: [IconState.seen, .done, .error, .idle])
+    func steady(state: IconState) {
+        let layer = row(state).dot.layer
+        #expect(layer?.animation(forKey: "pulse") == nil)
+        #expect(layer?.animation(forKey: "breathe") == nil)
+    }
+
+    @Test("Reduce Motion keeps the red blink but stops the breathing")
+    func reduceMotion() {
+        #expect(row(.needsYou, reduceMotion: true).dot.layer?.animation(forKey: "pulse") != nil)
+        #expect(row(.working, reduceMotion: true).dot.layer?.animation(forKey: "breathe") == nil)
+    }
+}

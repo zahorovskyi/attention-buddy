@@ -11,10 +11,13 @@ public struct AttentionSettings: Equatable, Sendable {
     /// Size of the icon: points per icon pixel. Key `scale`. Changed with the Settings slider.
     public var scale: Double
 
-    /// Allowed icon scales: the original size up to four times bigger.
+    /// Allowed icon scales: the smallest size (1×) up to four times bigger (4×).
     public static let scaleRange: ClosedRange<Double> = 1.5...6
 
-    public static let standard = AttentionSettings(seenTimeout: 180, repeatInterval: 15, scale: scaleRange.lowerBound)
+    /// The size a new install starts with: 2×.
+    public static let defaultScale: Double = 3
+
+    public static let standard = AttentionSettings(seenTimeout: 180, repeatInterval: 15, scale: defaultScale)
 
     /// The icon size as a multiple of the smallest size: 1 at the smallest, 4 at the biggest.
     public static func sizeMultiplier(forScale scale: Double) -> Double {

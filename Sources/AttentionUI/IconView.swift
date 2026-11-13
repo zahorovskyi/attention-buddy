@@ -20,6 +20,8 @@ public final class IconView: NSView {
     public var onMenu: ((NSEvent) -> Void)?
     /// Called with `true` when the pointer enters the icon and `false` when it leaves or a press starts.
     public var onHover: ((Bool) -> Void)?
+    /// Called once when a press turns into a drag.
+    public var onDragBegan: (() -> Void)?
 
     public let scale: CGFloat
     public private(set) var shownState: IconState = .idle
@@ -208,7 +210,6 @@ public final class IconView: NSView {
     }
 
     public override func mouseDown(with event: NSEvent) {
-        onHover?(false)
         if event.modifierFlags.contains(.control) {
             onMenu?(event)
             return
@@ -227,6 +228,9 @@ public final class IconView: NSView {
         let deltaY = mouse.y - startMouse.y
         if !isDragging && hypot(deltaX, deltaY) < dragThreshold {
             return
+        }
+        if !isDragging {
+            onDragBegan?()
         }
         isDragging = true
         window.setFrameOrigin(NSPoint(x: startOrigin.x + deltaX, y: startOrigin.y + deltaY))
@@ -247,7 +251,6 @@ public final class IconView: NSView {
     }
 
     public override func rightMouseDown(with event: NSEvent) {
-        onHover?(false)
         onMenu?(event)
     }
 }
