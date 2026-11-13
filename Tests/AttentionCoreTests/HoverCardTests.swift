@@ -71,3 +71,46 @@ struct HoverCardPlacementTests {
         #expect(frame.maxX == 1440)
     }
 }
+
+@Suite("Resizing the icon")
+struct ResizePlacementTests {
+    let screen = CGRect(x: 0, y: 0, width: 1440, height: 900)
+    let big = CGSize(width: 160, height: 120)
+
+    @Test("In the bottom-right corner the right and bottom edges stay put")
+    func bottomRight() {
+        let frame = CGRect(x: 1376, y: 24, width: 40, height: 30)
+        let origin = Placement.resizedOrigin(from: frame, to: big, screens: [screen])
+        #expect(origin == CGPoint(x: 1256, y: 24))
+    }
+
+    @Test("In the top-left corner the left and top edges stay put")
+    func topLeft() {
+        let frame = CGRect(x: 24, y: 846, width: 40, height: 30)
+        let origin = Placement.resizedOrigin(from: frame, to: big, screens: [screen])
+        #expect(origin == CGPoint(x: 24, y: 756))
+    }
+
+    @Test("Growing and shrinking back returns to exactly the same place, without drifting")
+    func reversible() {
+        var frame = CGRect(x: 1100, y: 89, width: 39, height: 32)
+        let original = frame
+        for step in 1...20 {
+            let size = CGSize(width: 39 + CGFloat(step) * 5, height: 32 + CGFloat(step) * 4)
+            frame = CGRect(origin: Placement.resizedOrigin(from: frame, to: size, screens: [screen]), size: size)
+        }
+        for step in (0...19).reversed() {
+            let size = CGSize(width: 39 + CGFloat(step) * 5, height: 32 + CGFloat(step) * 4)
+            frame = CGRect(origin: Placement.resizedOrigin(from: frame, to: size, screens: [screen]), size: size)
+        }
+        #expect(frame == original)
+    }
+
+    @Test("A size that would leave the screen is pushed back on")
+    func staysOnScreen() {
+        let frame = CGRect(x: 1430, y: 0, width: 10, height: 10)
+        let origin = Placement.resizedOrigin(from: frame, to: big, screens: [screen])
+        #expect(origin.x + big.width <= screen.maxX)
+        #expect(origin.y >= screen.minY)
+    }
+}

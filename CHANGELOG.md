@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org).
 
+## [0.1.2] - 2026-11-13
+
+- Settings window, opened from the right-click menu, with an icon size slider from 1× (the
+  original size) to 4×. The icon resizes live, grows away from its nearest screen corner so it
+  stays in place, and remembers its size.
+
 ## [0.1.1] - 2026-11-13
 
 - The right-click menu now holds only actions; the sessions are listed in the hover card.

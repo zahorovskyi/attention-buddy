@@ -168,7 +168,14 @@ shoulders and squash pivots between the feet. All animation runs in Core Animati
   the Dock. The position is saved after each drag and checked against the connected screens at
   launch and when displays change; an icon left on an unplugged display moves back to that corner.
 - The right-click menu holds only actions (show waiting sessions, mark all as seen, forget all
-  sessions, About, Quit). The sessions themselves are listed in the hover card.
+  sessions, Settings, About, Quit). The sessions themselves are listed in the hover card.
+- Settings is a small regular window (the app activates only while it is open). Its slider sets
+  the icon scale from 1.5 to 6 points per icon pixel, shown as 1× to 4×. Each change swaps in a new
+  icon view of that size and resizes the window before attaching it (attaching a view first would
+  shrink it to the old window size and clip it). The edges nearest the screen corner stay fixed, so
+  the icon grows away from its corner and shrinking returns it exactly; it is kept on screen. The
+  new size is saved
+  in the `scale` preference, which is clamped to the same range at launch.
 - Hovering for a moment shows a card (a separate borderless panel with the system popover
   material) with a summary line and one row per session: a dot in the state's color, the session
   name and what it needs. It sits below the icon, or above it near the bottom of the screen, and

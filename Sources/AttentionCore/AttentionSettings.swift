@@ -8,10 +8,32 @@ public struct AttentionSettings: Equatable, Sendable {
     public var seenTimeout: TimeInterval
     /// Seconds between repeated jump-and-wave animations while a session waits. Key `repeatInterval`.
     public var repeatInterval: TimeInterval
-    /// Size of the icon: points per icon pixel. Key `scale`.
+    /// Size of the icon: points per icon pixel. Key `scale`. Changed with the Settings slider.
     public var scale: Double
 
-    public static let standard = AttentionSettings(seenTimeout: 180, repeatInterval: 15, scale: 1.5)
+    /// Allowed icon scales: the original size up to four times bigger.
+    public static let scaleRange: ClosedRange<Double> = 1.5...6
+
+    public static let standard = AttentionSettings(seenTimeout: 180, repeatInterval: 15, scale: scaleRange.lowerBound)
+
+    /// The icon size as a multiple of the smallest size: 1 at the smallest, 4 at the biggest.
+    public static func sizeMultiplier(forScale scale: Double) -> Double {
+        scale / scaleRange.lowerBound
+    }
+
+    /// The size shown next to the slider, for example "1×", "2.5×" or "4×".
+    public static func sizeLabel(forScale scale: Double) -> String {
+        let rounded = (sizeMultiplier(forScale: scale) * 10).rounded() / 10
+        if rounded == rounded.rounded() {
+            return "\(Int(rounded))×"
+        }
+        return String(format: "%.1f×", rounded)
+    }
+
+    /// Keeps a scale inside `scaleRange`.
+    public static func clampedScale(_ scale: Double) -> Double {
+        min(max(scale, scaleRange.lowerBound), scaleRange.upperBound)
+    }
 
     public init(seenTimeout: TimeInterval, repeatInterval: TimeInterval, scale: Double) {
         self.seenTimeout = seenTimeout
@@ -26,7 +48,7 @@ public struct AttentionSettings: Equatable, Sendable {
             seenTimeout: Self.read("seenTimeout", from: defaults, default: standard.seenTimeout, range: 10...3600),
             repeatInterval: Self.read(
                 "repeatInterval", from: defaults, default: standard.repeatInterval, range: 5...600),
-            scale: Self.read("scale", from: defaults, default: standard.scale, range: 0.75...4)
+            scale: Self.read("scale", from: defaults, default: standard.scale, range: Self.scaleRange)
         )
     }
 

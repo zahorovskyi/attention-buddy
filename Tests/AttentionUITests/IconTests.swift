@@ -263,3 +263,59 @@ struct HoverCardTests {
         #expect(!card.isVisible)
     }
 }
+
+@MainActor
+@Suite("Settings window")
+struct SettingsWindowTests {
+    @Test("The slider covers 1× to 4× and starts at the current size")
+    func sliderRange() {
+        let settings = SettingsWindow(scale: 3)
+        #expect(settings.slider.minValue == 1.5)
+        #expect(settings.slider.maxValue == 6)
+        #expect(settings.slider.doubleValue == 3)
+        #expect(settings.sizeLabel.stringValue == "2×")
+    }
+
+    @Test("Moving the slider reports the new size and updates the label")
+    func sliderReports() {
+        let settings = SettingsWindow(scale: 1.5)
+        var reported: [Double] = []
+        settings.onScaleChange = { reported.append($0) }
+        settings.slider.doubleValue = 6
+        settings.sliderMoved()
+        #expect(reported == [6])
+        #expect(settings.sizeLabel.stringValue == "4×")
+    }
+
+    @Test("The biggest icon is four times the smallest")
+    func iconSizes() {
+        let small = IconView(scale: 1.5).frame.size
+        let big = IconView(scale: 6).frame.size
+        #expect(big.width == small.width * 4)
+        #expect(big.height == small.height * 4)
+    }
+}
+
+@MainActor
+@Suite("Resizing the floating window")
+struct FloatingPanelResizeTests {
+    @Test("Swapping in a bigger icon grows the window and does not clip the icon")
+    func growsWindow() {
+        let screen = NSScreen.main?.visibleFrame ?? CGRect(x: 0, y: 0, width: 1440, height: 900)
+        let small = IconView(scale: 1.5)
+        let panel = FloatingPanel(contentView: small)
+        panel.setFrameOrigin(Placement.defaultOrigin(size: small.frame.size, visibleFrame: screen))
+        let before = panel.frame
+
+        let big = IconView(scale: 6)
+        let bigSize = big.frame.size
+        panel.replaceContent(with: big, screens: [screen])
+
+        #expect(panel.frame.size == bigSize)
+        #expect(big.frame.size == bigSize)
+        #expect(big.bounds.size == bigSize)
+        // Bottom-right corner: the right and bottom edges did not move.
+        #expect(panel.frame.maxX == before.maxX)
+        #expect(panel.frame.minY == before.minY)
+    }
+}

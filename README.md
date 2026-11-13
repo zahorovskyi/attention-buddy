@@ -154,19 +154,21 @@ attention-buddy doctor
 - **Click** it to jump to Claude. When something is waiting, it opens Claude's "Sessions waiting
   for you" list in the desktop app.
 - **Right-click** it for "Show waiting sessions", "Mark all as seen", "Forget all sessions",
-  "About Attention Buddy" (opens this page) and "Quit".
+  "Settings…", "About Attention Buddy" (opens this page) and "Quit".
 - It starts near the **bottom-right corner** of your screen, just above the Dock.
 - **Hover** to see a card with every session and what it needs.
+- **Resize** it in Settings…: a slider from the original size (1×) up to four times bigger (4×).
+  The icon changes live as you drag. It grows away from its nearest screen corner, so it stays in
+  place, and it keeps its size.
 
-Optional settings:
+Advanced settings, from a terminal:
 
 | Setting | Default | Example |
 | --- | --- | --- |
-| Icon size (points per pixel) | 1.5 | `defaults write io.github.zahorovskyi.attention-buddy scale -float 2` |
 | Seconds until "seen" asks again | 180 | `defaults write io.github.zahorovskyi.attention-buddy seenTimeout -float 300` |
 | Seconds between waves | 15 | `defaults write io.github.zahorovskyi.attention-buddy repeatInterval -float 30` |
 
-Restart the icon after changing a setting (right-click, Quit, then start it again). With
+Restart the icon after changing these (right-click, Quit, then start it again). With
 **Reduce Motion** turned on in macOS, it keeps the colors and the blink but skips the animations.
 
 ## What it changes on your Mac

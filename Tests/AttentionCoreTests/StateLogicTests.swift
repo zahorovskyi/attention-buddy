@@ -179,3 +179,27 @@ struct SettingsTests {
         #expect(settings.scale == 2.5)
     }
 }
+
+@Suite("Icon size")
+struct IconSizeTests {
+    @Test("The size runs from the original size up to four times bigger")
+    func range() {
+        #expect(AttentionSettings.scaleRange.lowerBound == AttentionSettings.standard.scale)
+        #expect(AttentionSettings.scaleRange.upperBound == AttentionSettings.standard.scale * 4)
+    }
+
+    @Test("Saved sizes outside the range are clamped", arguments: [(0.5, 1.5), (3.0, 3.0), (100.0, 6.0)])
+    func clamping(saved: Double, expected: Double) throws {
+        let defaults = try #require(UserDefaults(suiteName: "attention-buddy-size-\(UUID().uuidString)"))
+        defaults.set(saved, forKey: "scale")
+        #expect(AttentionSettings(defaults: defaults).scale == expected)
+        #expect(AttentionSettings.clampedScale(saved) == expected)
+    }
+
+    @Test(
+        "The slider label shows the size as a multiple of the smallest",
+        arguments: [(1.5, "1×"), (3.0, "2×"), (3.75, "2.5×"), (4.4, "2.9×"), (6.0, "4×")])
+    func label(scale: Double, expected: String) {
+        #expect(AttentionSettings.sizeLabel(forScale: scale) == expected)
+    }
+}

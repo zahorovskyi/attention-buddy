@@ -15,7 +15,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
     public static let waitingSessionsURL = URL(string: "claude://code/needs-input")
 
     private let store: SessionStore
-    private let settings: AttentionSettings
+    private var settings: AttentionSettings
+    private var settingsWindow: SettingsWindow?
     private let preferences: UserDefaults
     private var seen: SeenTracker
     private var scheduler: AnimationScheduler
@@ -40,17 +41,12 @@ public final class AppController: NSObject, NSApplicationDelegate {
     }
 
     public func applicationDidFinishLaunching(_ notification: Notification) {
-        let view = IconView(scale: CGFloat(settings.scale))
+        let view = makeIconView(scale: settings.scale)
         let panel = FloatingPanel(contentView: view)
         panel.setFrameOrigin(restoredOrigin(size: view.frame.size))
         panel.orderFrontRegardless()
         self.panel = panel
         self.iconView = view
-
-        view.onClick = { [weak self] in self?.iconClicked() }
-        view.onMoved = { [weak self] in self?.savePosition() }
-        view.onMenu = { [weak self] event in self?.showMenu(for: event) }
-        view.onHover = { [weak self] inside in self?.hoverChanged(inside) }
 
         activity = ProcessInfo.processInfo.beginActivity(
             options: .userInitiatedAllowingIdleSystemSleep,
@@ -78,6 +74,44 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 self?.refresh()
             }
         }
+    }
+
+    private func makeIconView(scale: Double) -> IconView {
+        let view = IconView(scale: CGFloat(scale))
+        view.onClick = { [weak self] in self?.iconClicked() }
+        view.onMoved = { [weak self] in self?.savePosition() }
+        view.onMenu = { [weak self] event in self?.showMenu(for: event) }
+        view.onHover = { [weak self] inside in self?.hoverChanged(inside) }
+        return view
+    }
+
+    // MARK: Size
+
+    /// Swaps in an icon of the new size, keeping the edges nearest the screen corner in place.
+    private func resizeIcon(to scale: Double) {
+        guard let panel, scale != settings.scale else {
+            return
+        }
+        settings.scale = scale
+        preferences.set(scale, forKey: "scale")
+
+        hoverCard.hide()
+        let view = makeIconView(scale: scale)
+        view.show(scheduler.current, animated: false, reduceMotion: reduceMotion)
+        view.setAccessibilityLabel(iconView?.accessibilityLabel())
+        panel.replaceContent(with: view, screens: visibleScreens())
+        iconView = view
+        savePosition()
+    }
+
+    @objc private func openSettings() {
+        if settingsWindow == nil {
+            let window = SettingsWindow(scale: settings.scale)
+            window.onScaleChange = { [weak self] scale in self?.resizeIcon(to: scale) }
+            settingsWindow = window
+        }
+        settingsWindow?.update(scale: settings.scale)
+        settingsWindow?.show()
     }
 
     // MARK: Hover card
@@ -184,6 +218,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         menu.addItem(actionItem("Mark all as seen", #selector(markAllSeen)))
         menu.addItem(actionItem("Forget all sessions", #selector(forgetSessions)))
         menu.addItem(.separator())
+        menu.addItem(actionItem("Settings…", #selector(openSettings)))
         menu.addItem(actionItem("About Attention Buddy \(AppVersion.current)", #selector(openAbout)))
         menu.addItem(actionItem("Quit", #selector(quit)))
         NSMenu.popUpContextMenu(menu, with: event, for: iconView)
