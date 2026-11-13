@@ -177,29 +177,23 @@ public final class AppController: NSObject, NSApplicationDelegate {
         guard let iconView else {
             return
         }
+        // The sessions themselves live in the hover card; the menu only holds actions.
         let menu = NSMenu()
         menu.autoenablesItems = false
-        if resolved.isEmpty {
-            menu.addItem(disabledItem("No Claude Code sessions yet"))
-        }
-        for entry in resolved {
-            let detail = StateText.detail(for: entry.session, state: entry.state)
-            menu.addItem(disabledItem("\(entry.session.displayName): \(detail)"))
-        }
-        menu.addItem(.separator())
         menu.addItem(actionItem("Show waiting sessions", #selector(showWaitingSessions)))
         menu.addItem(actionItem("Mark all as seen", #selector(markAllSeen)))
         menu.addItem(actionItem("Forget all sessions", #selector(forgetSessions)))
         menu.addItem(.separator())
-        menu.addItem(disabledItem("Attention Buddy \(AppVersion.current)"))
+        menu.addItem(actionItem("About Attention Buddy \(AppVersion.current)", #selector(openAbout)))
         menu.addItem(actionItem("Quit", #selector(quit)))
         NSMenu.popUpContextMenu(menu, with: event, for: iconView)
     }
 
-    private func disabledItem(_ title: String) -> NSMenuItem {
-        let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
-        item.isEnabled = false
-        return item
+    @objc private func openAbout() {
+        guard let url = URL(string: AppVersion.repositoryURL) else {
+            return
+        }
+        NSWorkspace.shared.open(url)
     }
 
     private func actionItem(_ title: String, _ action: Selector) -> NSMenuItem {

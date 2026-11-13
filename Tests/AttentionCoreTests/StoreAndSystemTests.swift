@@ -92,9 +92,9 @@ struct PlacementTests {
     let size = CGSize(width: 40, height: 30)
     let screen = CGRect(x: 0, y: 0, width: 1440, height: 875)
 
-    @Test("The default spot is near the top-right corner")
+    @Test("The default spot is near the bottom-right corner")
     func defaultOrigin() {
-        #expect(Placement.defaultOrigin(size: size, visibleFrame: screen) == CGPoint(x: 1376, y: 821))
+        #expect(Placement.defaultOrigin(size: size, visibleFrame: screen) == CGPoint(x: 1376, y: 24))
     }
 
     @Test("A position on screen is kept")
@@ -106,7 +106,7 @@ struct PlacementTests {
     @Test("A position on an unplugged monitor moves back to the default spot")
     func movesOffscreen() {
         let origin = CGPoint(x: 3000, y: 100)
-        #expect(Placement.clamp(origin: origin, size: size, screens: [screen]) == CGPoint(x: 1376, y: 821))
+        #expect(Placement.clamp(origin: origin, size: size, screens: [screen]) == CGPoint(x: 1376, y: 24))
     }
 }
 

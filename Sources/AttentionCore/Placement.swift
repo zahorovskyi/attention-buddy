@@ -2,11 +2,12 @@ import CoreGraphics
 
 /// Keeps the icon somewhere the user can see it.
 public enum Placement {
-    /// The default spot: near the top-right corner of a screen's visible area.
+    /// The default spot: near the bottom-right corner of a screen's visible area (above the Dock),
+    /// `margin` points in from the right and bottom edges. AppKit coordinates (y pointing up).
     public static func defaultOrigin(size: CGSize, visibleFrame: CGRect, margin: CGFloat = 24) -> CGPoint {
         CGPoint(
             x: visibleFrame.maxX - size.width - margin,
-            y: visibleFrame.maxY - size.height - margin
+            y: visibleFrame.minY + margin
         )
     }
 

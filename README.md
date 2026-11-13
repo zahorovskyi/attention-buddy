@@ -153,7 +153,9 @@ attention-buddy doctor
 - **Drag** the icon anywhere. It remembers the spot, even across restarts and display changes.
 - **Click** it to jump to Claude. When something is waiting, it opens Claude's "Sessions waiting
   for you" list in the desktop app.
-- **Right-click** it for the list of sessions, "Mark all as seen", "Forget all sessions" and "Quit".
+- **Right-click** it for "Show waiting sessions", "Mark all as seen", "Forget all sessions",
+  "About Attention Buddy" (opens this page) and "Quit".
+- It starts near the **bottom-right corner** of your screen, just above the Dock.
 - **Hover** to see a card with every session and what it needs.
 
 Optional settings:

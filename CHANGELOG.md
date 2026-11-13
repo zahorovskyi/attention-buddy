@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org).
 
+## [0.1.1] - 2026-11-13
+
+- The right-click menu now holds only actions; the sessions are listed in the hover card.
+- New "About Attention Buddy" menu item that opens the project page.
+- The icon now starts near the bottom-right corner of the screen, above the Dock.
+
 ## [0.1.0] - 2026-11-13
 
 First release.

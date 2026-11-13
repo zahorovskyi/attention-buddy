@@ -164,8 +164,11 @@ shoulders and squash pivots between the feet. All animation runs in Core Animati
   full-screen apps, and never takes focus or appears in the Dock or app switcher.
 - The view fills its box with an almost invisible color, because macOS lets clicks pass through
   fully transparent pixels. That keeps the gaps between the legs grabbable.
-- The position is saved after each drag and checked against the connected screens at launch and
-  when displays change.
+- It starts 24 points in from the bottom-right corner of the main screen's visible area, so above
+  the Dock. The position is saved after each drag and checked against the connected screens at
+  launch and when displays change; an icon left on an unplugged display moves back to that corner.
+- The right-click menu holds only actions (show waiting sessions, mark all as seen, forget all
+  sessions, About, Quit). The sessions themselves are listed in the hover card.
 - Hovering for a moment shows a card (a separate borderless panel with the system popover
   material) with a summary line and one row per session: a dot in the state's color, the session
   name and what it needs. It sits below the icon, or above it near the bottom of the screen, and
