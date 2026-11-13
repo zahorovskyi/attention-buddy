@@ -10,8 +10,23 @@ needs the user: red, blinking, jumping and waving for an approval or question, g
 is done. It is silent, uses no network, and stores no prompt or code content.
 
 Architecture in one line: Claude Code hook events → `hooks/attention-buddy-hook.sh` writes
-`~/.claude/attention-buddy/<session_id>.json` → the Swift app polls those files and animates the
+`~/.claude/attention-buddy/<session_id>.json` → the Swift app watches that folder and animates the
 icon. Full design: [docs/DESIGN.md](docs/DESIGN.md).
+
+## Explaining it to a user
+
+- **States:** dim clay and stepping while Claude works; red, blinking, jumping and waving when a
+  session needs an approval, an answer or MCP input; steady red ("seen") once the user looked at
+  Claude, back to blinking after 3 minutes; green with a hop when a turn is done; red with a head
+  shake when a turn failed. With several sessions it shows the most urgent one.
+- **Using it:** drag it anywhere (it starts at the bottom-right corner, above the Dock); hover to
+  see every session and what it needs; click to open Claude's waiting sessions; right-click for
+  Show waiting sessions, Mark all as seen, Forget all sessions, Settings…, About and Quit.
+- **Settings…:** an icon size slider from 1× (smallest) to 4×. Advanced timings
+  (`seenTimeout`, `repeatInterval`) are `defaults write io.github.zahorovskyi.attention-buddy …`
+  values; see the README.
+- **Privacy:** no network access; only the event name, session id, tool name, folder and session
+  title are stored, never prompts, code or output.
 
 ## Helping a user install it
 
@@ -47,14 +62,22 @@ Before running the install script, tell the user what it changes (offer `--dry-r
 attention-buddy doctor     # exit code 0 means connected; "✗" lines explain what is missing
 ```
 
-For the plugin, `doctor` is not on the PATH; check that the icon appears after starting a new
-Claude Code session (the first start builds it, about 10 seconds).
+For the plugin, the app is not on the `PATH`. Start a new Claude Code session (the first start
+builds the icon, about 10 seconds), then run
+`~/.claude/plugins/data/attention-buddy-attention-buddy/bin/attention-buddy doctor`.
 
 **Uninstall:**
 
 - Plugin: `/plugin uninstall attention-buddy`, then quit the icon (right-click → Quit).
 - Install script: `sh ~/.local/share/attention-buddy/install.sh --uninstall`
 - Homebrew: `attention-buddy setup --remove && brew services stop attention-buddy && brew uninstall attention-buddy`
+- The install script also deletes the state folder and preferences. For the plugin or Homebrew,
+  offer to remove them: `rm -rf ~/.claude/attention-buddy` and
+  `defaults delete io.github.zahorovskyi.attention-buddy`.
+
+**After Quit** the icon stays closed. Start it again with a new Claude Code session (plugin),
+`launchctl kickstart gui/$(id -u)/io.github.zahorovskyi.attention-buddy` (install script) or
+`brew services restart attention-buddy` (Homebrew).
 
 **If it does not react:** run `attention-buddy doctor`. Common causes are missing hooks,
 an organization policy that allows only managed hooks, or a missing `jq`.
@@ -64,13 +87,15 @@ an organization policy that allows only managed hooks, or a missing `jq`.
 Layout:
 
 ```
-Sources/AttentionCore/     pure logic, no AppKit (state files, priority, seen timer, scheduler, doctor)
-Sources/AttentionUI/       AppKit + Core Animation (window, icon layers, animations, app controller)
+Sources/AttentionCore/     pure logic, no AppKit: state files, priority, seen timer, animation scheduler,
+                           settings and size range, placement, hover card content, single-instance lock, doctor
+Sources/AttentionUI/       AppKit + Core Animation: floating window, icon layers and animations, hover card,
+                           Settings window, state folder watcher, app controller, PNG snapshots
 Sources/attention-buddy/   command-line entry point (run, setup, doctor, snapshot)
 Tests/                     Swift Testing suites
 hooks/                     the hook script and the plugin's hooks.json
 scripts/                   build.sh (plain swiftc build), plugin-start.sh, check-privacy.sh
-ShellTests/                bats tests for the hook script, installer and plugin
+ShellTests/                bats tests for the hook script, installer, plugin and repository checks
 install.sh                 installer for the one-line and clone methods; also used by `setup`
 .claude-plugin/            plugin manifest and marketplace file
 ```
@@ -97,6 +122,8 @@ Rules:
 - Shell scripts are POSIX `sh`, `shellcheck` clean, with every variable quoted.
 - The hook script must never print, never fail and stay fast; it runs on every tool call.
 - Every new event or state needs tests (Swift and bats) and an update to `docs/DESIGN.md`.
+- When user-visible behavior changes, update `README.md`, `docs/DESIGN.md`, this file and the
+  `[Unreleased]` section of `CHANGELOG.md` in the same change.
 - Never commit personal data: no real home paths, emails or machine details.
   `scripts/check-privacy.sh` enforces this in CI.
 - Versions must match in `Sources/AttentionCore/Version.swift`, `.claude-plugin/plugin.json` and

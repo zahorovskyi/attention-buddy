@@ -107,8 +107,9 @@ public enum Doctor {
             results.append(
                 DoctorCheck(
                     .warning,
-                    "The icon is not running. Start it with `attention-buddy`; it also starts at login "
-                        + "or with your next Claude Code session, depending on how you installed it."))
+                    "The icon is not running. Start it with a new Claude Code session (plugin), "
+                        + "`launchctl kickstart gui/$(id -u)/io.github.zahorovskyi.attention-buddy` (install script) "
+                        + "or `brew services restart attention-buddy` (Homebrew)."))
         }
         return results
     }

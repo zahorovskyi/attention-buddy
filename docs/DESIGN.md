@@ -167,21 +167,43 @@ shoulders and squash pivots between the feet. All animation runs in Core Animati
 - It starts 24 points in from the bottom-right corner of the main screen's visible area, so above
   the Dock. The position is saved after each drag and checked against the connected screens at
   launch and when displays change; an icon left on an unplugged display moves back to that corner.
-- The right-click menu holds only actions (show waiting sessions, mark all as seen, forget all
-  sessions, Settings, About, Quit). The sessions themselves are listed in the hover card.
-- Settings is a small regular window (the app activates only while it is open). Its slider sets
-  the icon scale from 1.5 to 6 points per icon pixel, shown as 1× to 4×. Each change swaps in a new
-  icon view of that size and resizes the window before attaching it (attaching a view first would
-  shrink it to the old window size and clip it). The edges nearest the screen corner stay fixed, so
-  the icon grows away from its corner and shrinking returns it exactly; it is kept on screen. The
-  new size is saved
-  in the `scale` preference, which is clamped to the same range at launch.
-- Hovering for a moment shows a card (a separate borderless panel with the system popover
-  material) with a summary line and one row per session: a dot in the state's color, the session
-  name and what it needs. It sits below the icon, or above it near the bottom of the screen, and
-  updates live. VoiceOver reads the same text from the icon.
 - A `flock`-based single-instance lock (`.icon.lock` in the state folder) makes sure only one icon
   runs, however many launchers start it. The lock frees itself when the process exits or crashes.
+
+## Interaction
+
+- **Click:** marks every waiting session as seen. If something needs attention (needs you, seen or
+  error) it opens the desktop app's "Sessions waiting for you" list (`claude://code/needs-input`);
+  otherwise it brings the Claude desktop app to the front.
+- **Hover:** after a short pause a card appears (a separate borderless panel with the system
+  popover material). It has a summary line and one row per session, most urgent first: a dot in
+  the state's color, the session name and what it needs, up to six rows plus "+N more sessions".
+  It sits below the icon, or above it near the bottom of the screen, and updates live. VoiceOver
+  reads the same text from the icon.
+- **Right-click:** a menu of actions only: Show waiting sessions, Mark all as seen, Forget all
+  sessions, Settings…, About Attention Buddy (opens the project page) and Quit. The sessions
+  themselves are listed in the hover card.
+- **Settings…:** a small regular window; the app activates only while it is open. Its slider sets
+  the icon scale from 1.5 to 6 points per icon pixel, shown as 1× to 4×, and applies live. Each
+  change builds an icon view of the new size and resizes the window before attaching it, because
+  attaching a view to a window first shrinks the view to the old window size and clips it. The
+  edges nearest the screen corner stay fixed, so the icon grows away from its corner, shrinking
+  returns it exactly, and it is kept on screen.
+- **Quit:** exits cleanly. The login item and `brew services` restart the icon only after a crash,
+  not after Quit; the plugin starts it again with the next Claude Code session.
+
+## Preferences
+
+Stored with `UserDefaults` in the domain `io.github.zahorovskyi.attention-buddy`
+(`~/Library/Preferences/io.github.zahorovskyi.attention-buddy.plist`). Every value is clamped to
+its range when read, so a hand-edited value can't break the app.
+
+| Key | Set by | Default | Range |
+| --- | --- | --- | --- |
+| `positionX`, `positionY` | dragging the icon | bottom-right corner | any spot on a connected screen |
+| `scale` | the Settings slider | 1.5 (1×) | 1.5 to 6 (1× to 4×) |
+| `seenTimeout` | `defaults write` | 180 seconds | 10 to 3600 |
+| `repeatInterval` | `defaults write` | 15 seconds | 5 to 600 |
 
 ## Commands
 
@@ -244,10 +266,11 @@ module; `#if canImport(...)` guards skip the cross-module imports SwiftPM needs.
 
 | Layer | Tool | What it covers |
 | --- | --- | --- |
-| Core logic | Swift Testing (`Tests/AttentionCoreTests`) | State files, priority, the seen timer with a fixed clock, animation scheduling, dead-process cleanup, settings, placement, the single-instance lock, `doctor` |
-| Icon | Swift Testing (`Tests/AttentionUITests`) | Geometry, styles, animation definitions, layer setup, and rendered pixels (state colors, transparent eye holes, the raised arm) |
-| Hook script | bats (`ShellTests/hook.bats`) | Every event, tool-call matching, safe session ids, broken input, missing `jq`, 50 parallel events, stale locks, speed |
+| Core logic | Swift Testing (`Tests/AttentionCoreTests`) | State files, priority, the seen timer with a fixed clock, animation scheduling, dead-process cleanup, settings and the size range, placement (default spot, unplugged screens, hover card, resizing without drift), hover card content, the single-instance lock, `doctor` |
+| Icon | Swift Testing (`Tests/AttentionUITests`) | Geometry, styles, animation definitions, layer setup, rendered pixels (state colors, transparent eye holes, the raised arm), the hover card, the Settings slider, and resizing the real window without clipping |
+| Hook script | bats (`ShellTests/hook.bats`) | Every event, tool-call matching (including answered questions), safe session ids, broken input, missing `jq`, 50 parallel events, stale locks, speed |
 | Installers and plugin | bats (`ShellTests/install.bats`) | Fresh install, keeping other hooks, running twice, removal, broken settings, plugin detection, dry run, uninstall, Homebrew paths, the plugin start script |
+| Repository | bats (`ShellTests/repo.bats`) | Versions match, the plugin name is allowed, every local documentation link works, the privacy check passes |
 | Homebrew | tap CI | `brew style`, `brew audit --strict`, build from source, `brew test` |
 | Repository | CI | `swift-format`, `shellcheck`, `claude plugin validate`, the privacy check and `gitleaks` |
 
@@ -255,5 +278,13 @@ module; `#if canImport(...)` guards skip the cross-module imports SwiftPM needs.
 
 Versions follow semantic versioning. The version lives in `Sources/AttentionCore/Version.swift`,
 `.claude-plugin/plugin.json` and `CHANGELOG.md`; a test keeps them equal. A release is a git tag
-(`v0.1.0`) with a GitHub release. The one-line installer and the Homebrew formula download the
-tagged source, and plugin users get the new version when `plugin.json` changes.
+(`vX.Y.Z`) with a GitHub release, followed by an update of the Homebrew formula's URL and
+`sha256` in the tap repository (the steps are in `CONTRIBUTING.md`).
+
+How users get a new version:
+
+- **Install script:** the one-line installer downloads the latest release; rerun it to update.
+- **Homebrew:** `brew upgrade attention-buddy`, once the formula points at the new tag.
+- **Plugin:** `/plugin update attention-buddy@attention-buddy`. Claude Code reads the version from
+  `plugin.json`, so users only see a new version when it changes. Third-party marketplaces don't
+  auto-update by default.

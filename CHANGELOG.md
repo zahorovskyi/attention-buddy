@@ -3,6 +3,13 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+- `doctor` now explains how to start the icon again for each install method.
+- Documentation: how to restart the icon after Quit, `doctor` for plugin installs, the
+  preferences file, cleaning up after a plugin or Homebrew uninstall, and a full list of
+  preferences, interactions and tests in the design doc.
+
 ## [0.1.2] - 2026-11-13
 
 - Settings window, opened from the right-click menu, with an icon size slider from 1× (the

@@ -46,6 +46,7 @@ while Claude works and starts blinking red and waving the moment any session nee
 - **Visual, silent, always there.** No sounds and no banners that vanish.
 - **Every session at once.** One icon watches all your Claude Code sessions, in the desktop app
   and in the terminal.
+- **Yours to place and size.** Drag it anywhere; make it up to four times bigger in Settings.
 - **Tiny and native.** One small Swift app, no web runtime, near-zero CPU.
 - **Private.** No network access. It never reads your prompts, code or tool output.
 
@@ -148,6 +149,9 @@ Check that everything is connected:
 attention-buddy doctor
 ```
 
+With the plugin, the app is not on your `PATH`; run it from the plugin's data folder instead:
+`~/.claude/plugins/data/attention-buddy-attention-buddy/bin/attention-buddy doctor`.
+
 ## Using it
 
 - **Drag** the icon anywhere. It remembers the spot, even across restarts and display changes.
@@ -168,8 +172,19 @@ Advanced settings, from a terminal:
 | Seconds until "seen" asks again | 180 | `defaults write io.github.zahorovskyi.attention-buddy seenTimeout -float 300` |
 | Seconds between waves | 15 | `defaults write io.github.zahorovskyi.attention-buddy repeatInterval -float 30` |
 
-Restart the icon after changing these (right-click, Quit, then start it again). With
-**Reduce Motion** turned on in macOS, it keeps the colors and the blink but skips the animations.
+Restart the icon after changing these: right-click, Quit, then start it again (see
+[Starting the icon again](#starting-the-icon-again)). With **Reduce Motion** turned on in macOS, it
+keeps the colors and the blink but skips the animations.
+
+### Starting the icon again
+
+After **Quit**, the icon stays closed until you start it:
+
+| Installed with | Start it with |
+| --- | --- |
+| Plugin | start a new Claude Code session |
+| Install script | `launchctl kickstart gui/$(id -u)/io.github.zahorovskyi.attention-buddy`, or log in again |
+| Homebrew | `brew services restart attention-buddy` |
 
 ## What it changes on your Mac
 
@@ -179,6 +194,7 @@ Restart the icon after changing these (right-click, Quit, then start it again). 
 | Hooks | inside the plugin | added to `~/.claude/settings.json`, with a backup | added by `attention-buddy setup`, with a backup |
 | Start at login | no; starts with Claude Code | `~/Library/LaunchAgents/io.github.zahorovskyi.attention-buddy.plist` | `brew services` |
 | Session state | `~/.claude/attention-buddy/` | same | same |
+| Preferences (position, size) | `~/Library/Preferences/io.github.zahorovskyi.attention-buddy.plist` | same | same |
 
 Nothing else. No network access, no telemetry, no accounts.
 
@@ -190,6 +206,14 @@ Nothing else. No network access, no telemetry, no accounts.
 | Install script | `sh ~/.local/share/attention-buddy/install.sh --uninstall` |
 | Homebrew | `attention-buddy setup --remove`, `brew services stop attention-buddy`, `brew uninstall attention-buddy` |
 
+The install script also deletes the session state and preferences. After removing the plugin or
+the Homebrew formula, delete them yourself if you like:
+
+```bash
+rm -rf ~/.claude/attention-buddy
+defaults delete io.github.zahorovskyi.attention-buddy
+```
+
 ## Troubleshooting
 
 Run `attention-buddy doctor` first. It checks the hooks, `jq`, the state folder and whether the
@@ -200,7 +224,10 @@ icon is running.
   reports this.
 - **Installed twice** (plugin and script). It still works, but remove one; `doctor` tells you which.
 - **The icon is off screen.** It moves back by itself when displays change. You can also reset
-  its spot: `defaults delete io.github.zahorovskyi.attention-buddy positionX`.
+  its spot to the bottom-right corner: `defaults delete io.github.zahorovskyi.attention-buddy positionX`,
+  then restart the icon.
+- **The icon is too small or too big.** Right-click it and choose Settings….
+- **The icon is gone after Quit.** See [Starting the icon again](#starting-the-icon-again).
 
 ## For AI agents
 
