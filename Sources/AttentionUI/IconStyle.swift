@@ -10,7 +10,7 @@ public struct IconStyle: Equatable {
     public var opacity: Float
     /// Fade in and out once a second. Runs even with Reduce Motion, because it is the main signal.
     public var pulses: Bool
-    /// Legs step in place and the body bobs.
+    /// The legs step in place, the two pairs taking turns.
     public var walks: Bool
     /// The eyes blink every few seconds.
     public var blinks: Bool

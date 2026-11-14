@@ -9,7 +9,7 @@ import QuartzCore
 /// dragging, clicking and the right-click menu.
 ///
 /// Layer tree (all in a flipped, y-down space):
-/// canvas → motion (jump, squash, shake) → figure (bob, pulse, breathing, base opacity) → body, arms, legs.
+/// canvas → motion (jump, squash, shake) → figure (pulse, breathing, base opacity) → body, arms, legs.
 /// Two "z" letters float above the head while asleep; they sit on the canvas so they don't breathe.
 @MainActor
 public final class IconView: NSView {
@@ -160,7 +160,6 @@ public final class IconView: NSView {
         CATransaction.commit()
 
         figureLayer.removeAnimation(forKey: "pulse")
-        figureLayer.removeAnimation(forKey: "bob")
         figureLayer.removeAnimation(forKey: "breath")
         bodyLayer.removeAnimation(forKey: "blink")
         for leg in legLayersA + legLayersB {
@@ -177,7 +176,6 @@ public final class IconView: NSView {
             return
         }
         if style.walks {
-            figureLayer.add(IconAnimations.bob(scale: scale), forKey: "bob")
             for leg in legLayersA {
                 leg.add(IconAnimations.step(phase: 0, scale: scale), forKey: "step")
             }

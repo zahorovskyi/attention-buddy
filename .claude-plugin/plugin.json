@@ -1,7 +1,7 @@
 {
   "name": "attention-buddy",
   "displayName": "Attention Buddy",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "A floating Claude Code icon on your macOS desktop that jumps and waves when a session needs you.",
   "author": {
     "name": "zahorovskyi",

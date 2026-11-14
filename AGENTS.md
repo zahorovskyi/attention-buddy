@@ -143,6 +143,8 @@ Rules:
 - Prefer explicit, readable code over clever operators.
 - Menu item actions get neutral names (never `openSettings`, `showPreferences` and the like):
   macOS 26 adds icons to items with standard-looking action names, which misaligns the menu.
+- A discrete Core Animation keyframe animation needs one more key time than values; with as many
+  key times as values macOS silently ignores it (a test checks the leg steps).
 - Shell scripts are POSIX `sh`, `shellcheck` clean, with every variable quoted.
 - The hook script must never print, never fail and stay fast; it runs on every tool call.
 - Installers replace files by copy to a temporary file plus `mv`, never by overwriting in place:

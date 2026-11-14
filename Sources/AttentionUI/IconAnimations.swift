@@ -66,19 +66,10 @@ public enum IconAnimations {
         let lift = -1 * scale
         let animation = CAKeyframeAnimation(keyPath: "transform.translation.y")
         animation.values = phase == 0 ? [0, lift] : [lift, 0]
-        animation.keyTimes = [0, 0.5]
+        // A discrete animation needs one more key time than values; with as many key times as
+        // values Core Animation silently ignores it and the legs never move.
+        animation.keyTimes = [0, 0.5, 1]
         animation.calculationMode = .discrete
-        animation.duration = 0.8
-        animation.repeatCount = .infinity
-        return animation
-    }
-
-    /// A small up-and-down bob of the whole figure while walking.
-    public static func bob(scale: CGFloat) -> CAKeyframeAnimation {
-        let lift = -0.4 * scale
-        let animation = CAKeyframeAnimation(keyPath: "transform.translation.y")
-        animation.values = [0, lift, 0, lift, 0]
-        animation.keyTimes = [0, 0.25, 0.5, 0.75, 1]
         animation.duration = 0.8
         animation.repeatCount = .infinity
         return animation

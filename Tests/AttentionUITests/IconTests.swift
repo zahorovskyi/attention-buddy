@@ -90,6 +90,21 @@ struct IconAnimationTests {
         #expect(IconAnimations.shake(scale: 1).repeatCount == 0)
     }
 
+    @Test("Discrete animations have one more key time than values, or Core Animation ignores them")
+    @MainActor
+    func discreteKeyTimes() {
+        let view = IconView(scale: 2)
+        view.show(.working, animated: false, reduceMotion: false)
+        let animations = (view.legLayersA + view.legLayersB).compactMap { $0.animation(forKey: "step") }
+        #expect(animations.count == 4)
+        for case let animation as CAKeyframeAnimation in animations {
+            #expect(animation.calculationMode == .discrete)
+            let times = numbers(animation.keyTimes)
+            #expect(times.count == (animation.values?.count ?? 0) + 1)
+            #expect(times.first == 0 && times.last == 1)
+        }
+    }
+
     @Test("The two leg pairs step in opposite phases")
     func legPhases() {
         let first = numbers(IconAnimations.step(phase: 0, scale: 1).values)
@@ -125,7 +140,7 @@ struct IconViewTests {
 
         view.show(.working, animated: false, reduceMotion: false)
         #expect(view.figureLayer.animation(forKey: "pulse") == nil)
-        #expect(view.figureLayer.animation(forKey: "bob") != nil)
+        #expect(view.legLayersB.allSatisfy { $0.animation(forKey: "step") != nil })
         #expect(view.legLayersA.allSatisfy { $0.animation(forKey: "step") != nil })
         #expect(view.bodyLayer.animation(forKey: "blink") != nil)
         #expect(view.shownState == .working)
@@ -135,7 +150,7 @@ struct IconViewTests {
     func reduceMotion() {
         let view = IconView(scale: 2)
         view.show(.working, animated: false, reduceMotion: true)
-        #expect(view.figureLayer.animation(forKey: "bob") == nil)
+        #expect(view.legLayersA.allSatisfy { $0.animation(forKey: "step") == nil })
         #expect(view.bodyLayer.animation(forKey: "blink") == nil)
         view.show(.needsYou, animated: false, reduceMotion: true)
         #expect(view.figureLayer.animation(forKey: "pulse") != nil)

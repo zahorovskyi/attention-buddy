@@ -149,7 +149,7 @@ never treated as seen.
 | State | Color | Looping | One-shot |
 | --- | --- | --- | --- |
 | idle | clay `#D97757` at 55% | eye blink | none |
-| working | clay at 55% | legs step, body bobs, eye blink | none |
+| working | clay at 55% | legs step in place, the two pairs taking turns; eye blink | none |
 | needs you | red `#E5484D` | pulse (fade in and out every second) | jump and right-arm wave on entry, then every 15 s |
 | seen | red | eye blink | none |
 | done | green `#46A758` | eye blink | hop with both arms up on entry |
@@ -159,7 +159,7 @@ never treated as seen.
 With macOS **Reduce Motion** on, only colors and the pulse remain (asleep keeps its still pose).
 
 The mascot is split into separate layers (body with eye holes, two arms, four legs) inside two
-containers: `motion` (jump, squash, shake) and `figure` (bob, pulse, breathing). Arms rotate
+containers: `motion` (jump, squash, shake) and `figure` (pulse, breathing). Arms rotate
 around the shoulders and squash pivots between the feet. The sleeping "z" letters are text layers
 on the canvas, outside the figure, so they don't breathe. All animation runs in Core Animation on
 the GPU.

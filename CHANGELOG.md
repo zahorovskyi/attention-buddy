@@ -5,6 +5,12 @@ All notable changes to this project are documented here. Versions follow
 
 ## [Unreleased]
 
+## [0.1.10] - 2026-11-14
+
+- Fix: while Claude works, the legs now step in place as in the README picture. Their animation
+  was set up in a way macOS ignores, so they stood still; the small body bob that made it look
+  like jumping is gone.
+
 ## [0.1.9] - 2026-11-14
 
 - Sleep: a slider at the bottom of the session card puts the buddy to sleep for 15, 30 or 45
