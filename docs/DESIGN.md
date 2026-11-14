@@ -207,7 +207,8 @@ shoulders and squash pivots between the feet. All animation runs in Core Animati
   the titles already read. Terminal sessions, and desktop sessions without a title, keep the
   title from hook events, then the folder name.
 - **Right-click:** a menu of actions only: Show waiting sessions, Mark all as seen, Forget all
-  sessions, Settings…, About Attention Buddy (opens the project page) and Quit. The sessions
+  sessions, Settings…, About Attention Buddy (opens the project page), Hide until next session
+  and Quit. The sessions
   themselves are listed in the session card. No item has an icon, so all of them line up. macOS 26
   adds a symbol on its own to items whose action name looks standard (an action named
   `openSettings` gets a gear and indents its whole group), so the Settings item's action has the
@@ -320,10 +321,10 @@ module; `#if canImport(...)` guards skip the cross-module imports SwiftPM needs.
 
 | Layer | Tool | What it covers |
 | --- | --- | --- |
-| Core logic | Swift Testing (`Tests/AttentionCoreTests`) | State files, priority, the seen timer with a fixed clock, animation scheduling, dead-process cleanup, settings and the size range, placement (default spot, unplugged screens, the card, resizing without drift), card content and openable rows, desktop session ids, titles, renames and links, when the card opens and closes, the Quit note and the last restart, the single-instance lock, `doctor` |
+| Core logic | Swift Testing (`Tests/AttentionCoreTests`) | State files, priority, the seen timer with a fixed clock, animation scheduling, dead-process cleanup, settings and the size range, placement (default spot, unplugged screens, the card, resizing without drift), card content and openable rows, desktop session ids, titles, renames and links, when the card opens and closes, the Quit note and the last restart, noticing an update (a moved, replaced or relinked program file), the single-instance lock, `doctor` |
 | Icon | Swift Testing (`Tests/AttentionUITests`) | Geometry, styles, animation definitions, layer setup, rendered pixels (state colors, transparent eye holes, the raised arm), the session card, its clickable rows and dot animations (including Reduce Motion), the Settings slider, and resizing the real window without clipping |
 | Hook script | bats (`ShellTests/hook.bats`) | Every event, tool-call matching (including answered questions), starting the icon at session start and respecting Quit, safe session ids, broken input, missing `jq`, 50 parallel events, stale locks, speed |
-| Installers and plugin | bats (`ShellTests/install.bats`) | Fresh install, keeping other hooks, running twice, removal, broken settings, plugin detection, dry run, uninstall, Homebrew paths, the plugin start script (Quit respected, `--manual` start) and its start command |
+| Installers and plugin | bats (`ShellTests/install.bats`) | Fresh install, keeping other hooks, running twice, removal, broken settings, plugin detection, dry run, uninstall, Homebrew paths, reinstalling by moving a fresh file into place, the plugin start script (Quit respected, `--manual` start) and its start command |
 | Repository | bats (`ShellTests/repo.bats`) | Versions match, the plugin name is allowed, every local documentation link works, the privacy check passes |
 | Homebrew | tap CI | `brew style`, `brew audit --strict`, build from source, `brew test` |
 | Repository | CI | `swift-format`, `shellcheck`, `claude plugin validate`, the privacy check and `gitleaks` |

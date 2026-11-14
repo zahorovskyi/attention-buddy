@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+- Documentation: the Install and "What it changes" tables say the icon also starts with each
+  Claude Code session for script and Homebrew installs; the design doc lists "Hide until next
+  session" in the menu and the update-detection and installer tests.
+
 ## [0.1.7] - 2026-11-14
 
 - After an update, the running icon switches to the new version by itself within a second or

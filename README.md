@@ -92,9 +92,9 @@ Pick **one** method:
 | Method | Install with | The icon starts |
 | --- | --- | --- |
 | **Claude Code plugin** (no terminal) | In Claude Code:<br>`/plugin marketplace add zahorovskyi/attention-buddy`<br>`/plugin install attention-buddy@attention-buddy` | with each Claude Code session |
-| **One-line install** | `curl -fsSL https://raw.githubusercontent.com/zahorovskyi/attention-buddy/main/install.sh \| sh` | at login |
-| **From a clone** | `git clone https://github.com/zahorovskyi/attention-buddy.git`<br>`cd attention-buddy && ./install.sh` | at login |
-| **Homebrew** | `brew install zahorovskyi/tap/attention-buddy`<br>`attention-buddy setup`<br>`brew services start attention-buddy` | at login |
+| **One-line install** | `curl -fsSL https://raw.githubusercontent.com/zahorovskyi/attention-buddy/main/install.sh \| sh` | at login and with each Claude Code session |
+| **From a clone** | `git clone https://github.com/zahorovskyi/attention-buddy.git`<br>`cd attention-buddy && ./install.sh` | at login and with each Claude Code session |
+| **Homebrew** | `brew install zahorovskyi/tap/attention-buddy`<br>`attention-buddy setup`<br>`brew services start attention-buddy` | at login and with each Claude Code session |
 
 - **Plugin:** it brings its own hooks. On your next session start it builds the icon in the
   background (about 10 seconds) and starts it.
@@ -183,7 +183,7 @@ which also ends a Quit:
 | --- | --- | --- | --- |
 | The app | built into Claude Code's plugin data folder | `~/.local/bin/attention-buddy` | Homebrew prefix |
 | Hooks | inside the plugin | added to `~/.claude/settings.json`, with a backup | added by `attention-buddy setup`, with a backup |
-| Start at login | no; starts with Claude Code | `~/Library/LaunchAgents/io.github.zahorovskyi.attention-buddy.plist` | `brew services` |
+| Starting the icon | with each Claude Code session | a login item, `~/Library/LaunchAgents/io.github.zahorovskyi.attention-buddy.plist`, and each Claude Code session | `brew services` at login, and each Claude Code session |
 | Session state | `~/.claude/attention-buddy/` | same | same |
 | Preferences (position, size) | `~/Library/Preferences/io.github.zahorovskyi.attention-buddy.plist` | same | same |
 
