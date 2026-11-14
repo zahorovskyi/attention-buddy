@@ -274,7 +274,10 @@ All four share the same app code and hook script; only the installer differs.
 | Clone | same script, local source | LaunchAgent at login; the hook at each session start | |
 | Homebrew | `attention-buddy setup` | `brew services` at login; the hook at each session start | The formula can't write to the home folder during install, hence the separate `setup` step. The hook path uses Homebrew's stable `opt` link so it survives upgrades. |
 
-`install.sh` backs up `settings.json` before every change, is safe to run twice, removes only its
+`install.sh` replaces installed files by copying to a temporary file and moving it into place:
+overwriting a binary in place while the icon runs makes macOS kill the next start of it (the
+kernel keeps the old code signature for that file), and a hook script may be running while it is
+replaced. It backs up `settings.json` before every change, is safe to run twice, removes only its
 own entries, aborts without changes on invalid JSON, and supports `--dry-run`. When the plugin is
 installed it skips its own hooks unless `--force` is given. Installing twice is harmless anyway:
 both write the same state, and the second icon exits because of the lock.
@@ -332,10 +335,24 @@ Versions follow semantic versioning. The version lives in `Sources/AttentionCore
 (`vX.Y.Z`) with a GitHub release, followed by an update of the Homebrew formula's URL and
 `sha256` in the tap repository (the steps are in `CONTRIBUTING.md`).
 
-How users get a new version:
+How users get a new version (the README's Update table has the commands):
 
 - **Install script:** the one-line installer downloads the latest release; rerun it to update.
-- **Homebrew:** `brew upgrade attention-buddy`, once the formula points at the new tag.
-- **Plugin:** `/plugin update attention-buddy@attention-buddy`. Claude Code reads the version from
+  From a clone: `git pull && ./install.sh`.
+- **Homebrew:** `brew update && brew upgrade attention-buddy`, once the formula points at the new
+  tag.
+- **Plugin:** `claude plugin marketplace update attention-buddy`, then
+  `claude plugin update attention-buddy@attention-buddy`. Claude Code reads the version from
   `plugin.json`, so users only see a new version when it changes. Third-party marketplaces don't
-  auto-update by default.
+  auto-update unless the user turns it on. The new version builds at the next session start.
+
+**The running icon switches to the new version by itself.** At launch it remembers which file its
+start path pointed to (`ExecutableWatcher`: device, inode and modification time, following
+symlinks such as Homebrew's `opt` link). Every refresh checks that identity, a single `stat`. An
+installer moving a new file into place, a plugin rebuild or a Homebrew upgrade changes it; the
+icon then releases its single-instance lock, starts the new file at the same path and exits. A
+missing file (mid-update) is not treated as an update, and if the new copy can't start the old
+one keeps running. Without this, an icon started by a session start (outside launchd) would keep
+the old version until closed, because the installer only restarts the login item.
+
+There is no update check: the app never goes online. Users can watch the repository's releases.

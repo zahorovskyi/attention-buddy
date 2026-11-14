@@ -214,3 +214,13 @@ plugin_setup() {
   grep -q 'scripts/plugin-start.sh --manual' "$skill"
   [ -x "$ROOT/scripts/plugin-start.sh" ]
 }
+
+@test "reinstalling replaces the app with a new file, so a running copy can't break it" {
+  sh "$INSTALL" --no-login-item
+  before=$(ls -i "$HOME/.local/bin/attention-buddy" | awk '{print $1}')
+  sh "$INSTALL" --no-login-item
+  after=$(ls -i "$HOME/.local/bin/attention-buddy" | awk '{print $1}')
+  [ "$before" != "$after" ]
+  [ -z "$(ls "$HOME/.local/bin" | grep '\.new\.')" ]
+  [ -x "$HOME/.local/bin/attention-buddy" ]
+}

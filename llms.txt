@@ -6,7 +6,7 @@ Install with one of: the Claude Code plugin (`/plugin marketplace add zahorovsky
 
 ## Docs
 
-- [README](https://raw.githubusercontent.com/zahorovskyi/attention-buddy/main/README.md): what it is, states, install methods, usage, what it changes, uninstall, troubleshooting
+- [README](https://raw.githubusercontent.com/zahorovskyi/attention-buddy/main/README.md): what it is, states, install, update and uninstall per method, usage, what it changes, troubleshooting
 - [AGENTS.md](https://raw.githubusercontent.com/zahorovskyi/attention-buddy/main/AGENTS.md): how an agent should explain, install, verify and uninstall it, and how to work on the code
 - [Design](https://raw.githubusercontent.com/zahorovskyi/attention-buddy/main/docs/DESIGN.md): architecture, hook events, state rules, animations, install methods, decisions and limits
 

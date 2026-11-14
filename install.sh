@@ -259,6 +259,17 @@ find_source() {
   fail "the download was empty"
 }
 
+# Copies to a temporary file next to the target, then moves it into place. Overwriting a binary
+# in place while the icon runs makes macOS kill the next start of it (the kernel keeps the old
+# code signature for that file), and a hook script may be running while it is replaced. A move
+# gives a new file instead.
+replace_file() {
+  temporary="$2.new.$$"
+  cp "$1" "$temporary"
+  chmod 755 "$temporary"
+  mv -f "$temporary" "$2"
+}
+
 install_files() {
   source_dir=$(find_source)
   if [ -n "${ATTENTION_BUDDY_BINARY:-}" ]; then
@@ -280,11 +291,9 @@ install_files() {
     return 0
   fi
   mkdir -p "$prefix/bin" "$share_dir"
-  cp "$built" "$bin_path"
-  chmod 755 "$bin_path"
-  cp "$source_dir/hooks/attention-buddy-hook.sh" "$share_dir/attention-buddy-hook.sh"
-  cp "$source_dir/install.sh" "$share_dir/install.sh"
-  chmod 755 "$share_dir/attention-buddy-hook.sh" "$share_dir/install.sh"
+  replace_file "$built" "$bin_path"
+  replace_file "$source_dir/hooks/attention-buddy-hook.sh" "$share_dir/attention-buddy-hook.sh"
+  replace_file "$source_dir/install.sh" "$share_dir/install.sh"
   say "Installed $bin_path"
 }
 

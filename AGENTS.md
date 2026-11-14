@@ -80,6 +80,11 @@ builds the icon, about 10 seconds), then run
   offer to remove them: `rm -rf ~/.claude/attention-buddy` and
   `defaults delete io.github.zahorovskyi.attention-buddy`.
 
+**Updating:** plugin: `claude plugin marketplace update attention-buddy` then
+`claude plugin update attention-buddy@attention-buddy`; one-line install: rerun it; clone:
+`git pull && ./install.sh`; Homebrew: `brew update && brew upgrade attention-buddy`. The running
+icon switches to the new version by itself; nothing to restart.
+
 **Closing the icon:** "Hide until next session" (right-click menu) returns with the next Claude
 Code session; "Quit" stays closed until the user next logs in (plugin installs: until a restart).
 Start it by hand, which also ends a Quit, with `/attention-buddy:start` in Claude Code (plugin),
@@ -97,7 +102,8 @@ Layout:
 ```
 Sources/AttentionCore/     pure logic, no AppKit: state files, priority, seen timer, animation scheduler,
                            settings and size range, placement, card content and open/close rules,
-                           desktop session ids, titles and links, Quit note, single-instance lock, doctor
+                           desktop session ids, titles and links, Quit note, update detection,
+                           single-instance lock, doctor
 Sources/AttentionUI/       AppKit + Core Animation: floating window, icon layers and animations, session card,
                            Settings window, state folder watcher, app controller, PNG snapshots
 Sources/attention-buddy/   command-line entry point (run, setup, doctor, snapshot)
@@ -133,6 +139,8 @@ Rules:
   macOS 26 adds icons to items with standard-looking action names, which misaligns the menu.
 - Shell scripts are POSIX `sh`, `shellcheck` clean, with every variable quoted.
 - The hook script must never print, never fail and stay fast; it runs on every tool call.
+- Installers replace files by copy to a temporary file plus `mv`, never by overwriting in place:
+  macOS kills a binary rewritten in place while a copy of it runs.
 - Every new event or state needs tests (Swift and bats) and an update to `docs/DESIGN.md`.
 - When user-visible behavior changes, update `README.md`, `docs/DESIGN.md`, this file and the
   `[Unreleased]` section of `CHANGELOG.md` in the same change.

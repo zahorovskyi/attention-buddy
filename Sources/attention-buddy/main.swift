@@ -43,6 +43,24 @@ func runIcon() -> Int32 {
         settings: AttentionSettings(defaults: preferences),
         preferences: preferences
     )
+    // After an update replaces this program file, start the new copy and step aside.
+    if let path = ExecutableWatcher.launchPath() {
+        controller.executableWatcher = ExecutableWatcher(path: path)
+        controller.onUpdateInstalled = {
+            lock.release()
+            let newVersion = Process()
+            newVersion.executableURL = URL(fileURLWithPath: path)
+            newVersion.standardOutput = FileHandle.nullDevice
+            newVersion.standardError = FileHandle.nullDevice
+            do {
+                try newVersion.run()
+                exit(0)
+            } catch {
+                // Keep running the current version if the new one can't start.
+                _ = lock.acquire()
+            }
+        }
+    }
     appController = controller
     let app = NSApplication.shared
     app.setActivationPolicy(.accessory)

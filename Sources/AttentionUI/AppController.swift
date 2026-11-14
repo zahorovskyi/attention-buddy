@@ -37,6 +37,12 @@ public final class AppController: NSObject, NSApplicationDelegate {
     /// Keeps macOS App Nap from slowing the icon's timers while it sits in the background.
     private var activity: NSObjectProtocol?
 
+    /// Watches the app's own program file; when an update replaces it, `onUpdateInstalled` runs.
+    public var executableWatcher: ExecutableWatcher?
+    /// Restarts into the new version (set by the entry point, which owns the instance lock).
+    public var onUpdateInstalled: (() -> Void)?
+    private var updateHandled = false
+
     public init(store: SessionStore, settings: AttentionSettings, preferences: UserDefaults) {
         self.store = store
         self.settings = settings
@@ -233,6 +239,11 @@ public final class AppController: NSObject, NSApplicationDelegate {
     }
 
     private func refresh() {
+        if !updateHandled, executableWatcher?.hasBeenReplaced() == true {
+            updateHandled = true
+            onUpdateInstalled?()
+            return
+        }
         let now = Date()
         sessions = store.load()
         seen.forget(sessionsNotIn: Set(sessions.map(\.id)))

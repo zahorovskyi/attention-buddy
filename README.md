@@ -18,6 +18,7 @@
 <p align="center">
   <a href="#install">Install</a> ·
   <a href="#how-it-works">How it works</a> ·
+  <a href="#update">Update</a> ·
   <a href="docs/DESIGN.md">Design</a> ·
   <a href="#for-ai-agents">For AI agents</a>
 </p>
@@ -114,6 +115,20 @@ attention-buddy doctor
 With the plugin, the app is not on your `PATH`; run it from the plugin's data folder instead:
 `~/.claude/plugins/data/attention-buddy-attention-buddy/bin/attention-buddy doctor`.
 
+## Update
+
+| Method | Update with |
+| --- | --- |
+| **Claude Code plugin** | `claude plugin marketplace update attention-buddy`<br>`claude plugin update attention-buddy@attention-buddy`<br>or turn on auto-update for the marketplace in `/plugin` → Marketplaces |
+| **One-line install** | run the same `curl -fsSL https://raw.githubusercontent.com/zahorovskyi/attention-buddy/main/install.sh \| sh` line again |
+| **From a clone** | `git pull && ./install.sh` |
+| **Homebrew** | `brew update && brew upgrade attention-buddy` |
+
+The running icon notices that it was updated and switches to the new version by itself within a
+second or two; there's nothing to restart. Plugin updates are built at your next Claude Code
+session start (about 10 seconds), then the icon switches. To hear about new versions, watch the
+repository's releases on GitHub (Watch → Custom → Releases); the app itself never goes online.
+
 ## Using it
 
 - **Drag** the icon anywhere. It remembers the spot, even across restarts and display changes.
@@ -206,6 +221,9 @@ icon is running.
 - **The icon is off screen.** It moves back by itself when displays change. You can also reset
   its spot to the bottom-right corner: `defaults delete io.github.zahorovskyi.attention-buddy positionX`,
   then restart the icon.
+- **`attention-buddy` is killed as soon as it starts** (`zsh: killed`, exit code 137) after
+  upgrading with the install script while the icon was running: run the installer again. Since
+  0.1.7 the installer replaces the app safely, so this no longer happens.
 - **The icon is too small or too big.** Right-click it and choose Settings….
 - **The icon is gone.** After "Hide until next session" it returns with your next session; after
   Quit, at your next login. To start it now, see

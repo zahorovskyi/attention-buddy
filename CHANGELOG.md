@@ -3,6 +3,16 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org).
 
+## [0.1.7] - 2026-11-14
+
+- After an update, the running icon switches to the new version by itself within a second or
+  two, for every install method (before, an icon started by a session start kept the old
+  version until closed).
+- README: new Update section with a table per install method.
+- Fix: upgrading with the install script while the icon was running could leave an app that
+  macOS kills as soon as it starts (exit code 137). The installer now replaces files by moving a
+  fresh copy into place.
+
 ## [0.1.6] - 2026-11-14
 
 - New "Hide until next session" menu item: the icon comes back with your next Claude Code

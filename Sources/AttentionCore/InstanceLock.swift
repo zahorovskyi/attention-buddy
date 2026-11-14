@@ -31,6 +31,14 @@ public final class InstanceLock {
         return true
     }
 
+    /// Gives the lock up, for example right before starting a newer copy of the app.
+    public func release() {
+        if descriptor >= 0 {
+            close(descriptor)
+            descriptor = -1
+        }
+    }
+
     /// Whether some process holds the lock right now, without keeping it.
     public static func isHeld(at path: String) -> Bool {
         let fd = open(path, O_RDWR)
