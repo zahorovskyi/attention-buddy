@@ -334,7 +334,7 @@ struct MenuTests {
         let titles = makeController().makeMenu().items.map { $0.isSeparatorItem ? "-" : $0.title }
         #expect(
             titles == [
-                "Show waiting sessions", "Mark all as seen", "Forget all sessions", "-", "Settings…",
+                "Show waiting sessions", "Mark all as seen", "Forget all sessions", "-", "Sleep", "-", "Settings…",
                 "About Attention Buddy \(AppVersion.current)", "-", "Hide until next session", "Quit",
             ])
     }
@@ -460,5 +460,310 @@ extension NSImage {
         draw(in: NSRect(x: 0, y: 0, width: width, height: height))
         NSGraphicsContext.restoreGraphicsState()
         return bitmap.colorAt(x: Int(x), y: height - 1 - Int(y))?.alphaComponent
+    }
+}
+
+// MARK: Sleep
+
+@MainActor
+@Suite("Sleeping icon")
+struct SleepingIconTests {
+    private func degrees(_ transform: CATransform3D) -> Double {
+        atan2(Double(transform.m12), Double(transform.m11)) * 180 / .pi
+    }
+
+    @Test("Asleep is grey and still: no pulse, no walking, no blinking")
+    func style() {
+        let style = IconStyle.forState(.asleep)
+        #expect(style.color == Palette.grey)
+        #expect(style.sleeps)
+        #expect(!style.pulses && !style.walks && !style.blinks)
+        #expect(IconState.allCases.filter { IconStyle.forState($0).sleeps } == [.asleep])
+    }
+
+    @Test("The arms hang down while asleep and come back when it wakes")
+    func arms() {
+        let view = IconView(scale: 4)
+        view.show(.asleep, animated: false, reduceMotion: true)
+        #expect(abs(degrees(view.leftArmLayer.transform) + 72) < 0.01)
+        #expect(abs(degrees(view.rightArmLayer.transform) - 72) < 0.01)
+        view.show(.needsYou, animated: false, reduceMotion: true)
+        #expect(CATransform3DIsIdentity(view.leftArmLayer.transform))
+        #expect(CATransform3DIsIdentity(view.rightArmLayer.transform))
+    }
+
+    @Test("The eyes close to a thin slit at the bottom")
+    func eyes() throws {
+        let awake = try #require(RenderedIcon(state: .done))
+        let asleep = try #require(RenderedIcon(state: .asleep))
+        #expect(awake.pixel(6.7, 9).alpha == 0)
+        #expect(asleep.pixel(6.7, 9).alpha == 255)
+        #expect(asleep.pixel(6.7, 10.8).alpha == 0)
+        #expect(asleep.pixel(12, 8).red == 0x8E)
+    }
+
+    @Test("It breathes and two z letters float, unless Reduce Motion is on")
+    func motion() {
+        let view = IconView(scale: 4)
+        view.show(.asleep, animated: false, reduceMotion: false)
+        #expect(view.figureLayer.animation(forKey: "breath") != nil)
+        #expect(view.sleepLetters.count == 2)
+        #expect(view.sleepLetters.allSatisfy { $0.animation(forKey: "float") != nil })
+        view.show(.asleep, animated: false, reduceMotion: true)
+        #expect(view.figureLayer.animation(forKey: "breath") == nil)
+        #expect(view.sleepLetters.allSatisfy { $0.animation(forKey: "float") == nil })
+        view.show(.working, animated: false, reduceMotion: false)
+        #expect(view.figureLayer.animation(forKey: "breath") == nil)
+    }
+}
+
+@MainActor
+@Suite("Sleep slider")
+struct SleepSliderTests {
+    private func makeSlider(scale: CGFloat = 1) -> SleepSliderView {
+        let slider = SleepSliderView(scale: scale)
+        slider.frame = NSRect(x: 0, y: 0, width: SleepSliderView.baseMinimumWidth * scale, height: 66 * scale)
+        slider.untilText = { option in "until test \(option.shortLabel)" }
+        slider.layout()
+        return slider
+    }
+
+    @Test("Stops map to positions along the track and back")
+    func positions() {
+        let slider = makeSlider()
+        for option in SleepOption.allCases {
+            let x = slider.x(at: SleepSliderView.position(of: option))
+            #expect(SleepSliderView.nearestOption(to: slider.position(atX: x)) == option)
+        }
+        #expect(slider.position(atX: -100) == 0)
+        #expect(slider.position(atX: 10_000) == 1)
+    }
+
+    @Test("Awake it invites a drag; dragging names the stop; letting go chooses it")
+    func dragging() {
+        let slider = makeSlider()
+        var chosen: [SleepOption] = []
+        slider.onChoose = { chosen.append($0) }
+        #expect(slider.statusLeft.stringValue == "Sleep")
+        #expect(slider.statusRight.stringValue == "Drag to choose")
+        #expect(slider.wakeButton.isHidden)
+
+        slider.beginDrag(atX: slider.x(at: 0))
+        slider.drag(toX: slider.x(at: SleepSliderView.position(of: .oneHour)) + 3)
+        #expect(slider.isTracking)
+        #expect(slider.statusLeft.stringValue == "1 hour")
+        #expect(slider.statusRight.stringValue == "until test 1h")
+        slider.endDrag()
+        #expect(!slider.isTracking)
+        #expect(chosen == [.oneHour])
+        #expect(slider.position == SleepSliderView.position(of: .oneHour))
+    }
+
+    @Test("Asleep it shows the time left and a Wake up button")
+    func asleep() {
+        let slider = makeSlider()
+        var woke = 0
+        slider.onWake = { woke += 1 }
+        slider.update(asleep: true, option: .twoHours, remaining: "1 h 58 min")
+        #expect(slider.statusLeft.stringValue == "Asleep · 1 h 58 min")
+        #expect(!slider.wakeButton.isHidden)
+        #expect(slider.selectedOption == .twoHours)
+        #expect(
+            slider.stopLabels[SleepOption.twoHours.rawValue].font?.fontDescriptor.symbolicTraits.contains(.bold) == true
+                || slider.stopLabels[SleepOption.twoHours.rawValue].textColor == NSColor(cgColor: Palette.night))
+        slider.wakeButton.press()
+        #expect(woke == 1)
+        slider.update(asleep: false, option: nil, remaining: "")
+        #expect(slider.wakeButton.isHidden)
+        #expect(slider.statusLeft.stringValue == "Sleep")
+    }
+
+    @Test("Updates from the app don't move the knob while the user drags it")
+    func dragWins() {
+        let slider = makeSlider()
+        slider.beginDrag(atX: slider.x(at: 1))
+        slider.update(asleep: true, option: .fifteenMinutes, remaining: "15 min")
+        #expect(slider.selectedOption == .restOfDay)
+        slider.endDrag()
+    }
+
+    @Test("VoiceOver steps through the stops")
+    func accessibility() {
+        let slider = makeSlider()
+        var chosen: [SleepOption] = []
+        slider.onChoose = { chosen.append($0) }
+        #expect(slider.accessibilityRole() == .slider)
+        #expect(slider.accessibilityValue() as? String == "Awake")
+        #expect(slider.accessibilityPerformIncrement())
+        slider.update(asleep: true, option: .fifteenMinutes, remaining: "15 min")
+        #expect(slider.accessibilityPerformIncrement())
+        #expect(chosen == [.fifteenMinutes, .thirtyMinutes])
+        #expect(slider.wakeButton.accessibilityRole() == .button)
+    }
+
+    @Test("Every stop label fits inside the slider, even the selected one in bold")
+    func labelsFit() {
+        let slider = makeSlider()
+        slider.update(asleep: true, option: .restOfDay, remaining: "9 h")
+        for label in slider.stopLabels {
+            #expect(label.frame.minX >= 0 && label.frame.maxX <= slider.bounds.width, "\(label.stringValue)")
+            #expect(label.attributedStringValue.size().width <= label.frame.width, "\(label.stringValue)")
+        }
+    }
+
+    @Test("Everything grows with the card size")
+    func scales() {
+        let normal = makeSlider()
+        let big = makeSlider(scale: 2)
+        #expect(big.fittingSize.height == normal.fittingSize.height * 2)
+        #expect(big.stopLabels[0].font?.pointSize == (normal.stopLabels[0].font?.pointSize ?? 0) * 2)
+        #expect(big.wakeButton.intrinsicContentSize.height == normal.wakeButton.intrinsicContentSize.height * 2)
+    }
+}
+
+@MainActor
+@Suite("Session card with the sleep slider")
+struct CardSleepTests {
+    private let content = HoverCardContent(
+        header: "1 session needs you",
+        rows: [.init(title: "Fix login", detail: "Needs your approval for Bash", state: .needsYou)],
+        overflow: nil)
+
+    @Test("The slider shows by default and survives a refresh of the rows")
+    func sliderStays() throws {
+        let card = HoverCard()
+        card.show(content, near: CGRect(x: 400, y: 400, width: 78, height: 63))
+        let slider = try #require(card.sleepSlider)
+        var changed = content
+        changed.header = "All done"
+        card.show(changed, near: CGRect(x: 400, y: 400, width: 78, height: 63))
+        #expect(card.sleepSlider === slider)
+        #expect(slider.superview != nil)
+        card.hide()
+    }
+
+    @Test("The card keeps its width when the summary gets longer, as when it falls asleep")
+    func fixedWidth() {
+        let card = HoverCard()
+        card.show(content, near: CGRect(x: 400, y: 400, width: 78, height: 63))
+        let awake = card.frame.width
+        var asleep = content
+        asleep.header = "Asleep until 16:58 · Waiting for your answer, and a few more words to be long"
+        card.show(asleep, near: CGRect(x: 400, y: 400, width: 78, height: 63))
+        #expect(card.frame.width == awake)
+        #expect(awake == HoverCard.width)
+        card.scale = 2
+        card.show(asleep, near: CGRect(x: 400, y: 400, width: 78, height: 63))
+        #expect(card.frame.width == HoverCard.width * 2)
+        card.hide()
+    }
+
+    @Test("The Settings checkbox hides the slider")
+    func hidden() {
+        let card = HoverCard()
+        card.showsSleepSlider = false
+        card.show(content, near: CGRect(x: 400, y: 400, width: 78, height: 63))
+        #expect(card.sleepSlider == nil)
+        #expect(card.rowCount == 1)
+        card.hide()
+    }
+
+    @Test("The card size scales the text, and the sleep state reaches the slider")
+    func scaleAndState() throws {
+        let card = HoverCard()
+        card.scale = 1.5
+        card.updateSleep(asleep: true, option: .fourHours, remaining: "3 h 59 min")
+        card.show(content, near: CGRect(x: 400, y: 400, width: 78, height: 63))
+        #expect(card.headerFontSize == 11 * 1.5)
+        let slider = try #require(card.sleepSlider)
+        #expect(slider.scale == 1.5)
+        #expect(slider.selectedOption == .fourHours)
+        #expect(slider.statusLeft.stringValue == "Asleep · 3 h 59 min")
+        card.hide()
+    }
+}
+
+@MainActor
+@Suite("Sleep in the app")
+struct AppSleepTests {
+    private func makeController(defaults: UserDefaults) -> AppController {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("attention-buddy-sleep-\(UUID())")
+        return AppController(store: SessionStore(directory: directory), settings: .standard, preferences: defaults)
+    }
+
+    @Test("Sleeping adds Wake up to the menu, is remembered after a restart, and waking clears it")
+    func sleepAndWake() throws {
+        let defaults = try #require(UserDefaults(suiteName: "attention-buddy-app-sleep-\(UUID().uuidString)"))
+        let controller = makeController(defaults: defaults)
+        let sleepItem = try #require(controller.makeMenu().items.first { $0.title == "Sleep" })
+        #expect(sleepItem.submenu?.items.map(\.title) == SleepOption.allCases.map(\.title))
+
+        controller.startSleep(.oneHour)
+        #expect(controller.sleep.isAsleep(at: Date()))
+        #expect(controller.makeMenu().items.contains { $0.title == "Wake up" })
+        #expect(makeController(defaults: defaults).sleep.option == .oneHour)
+
+        controller.wakeUp()
+        #expect(!controller.sleep.isAsleep(at: Date()))
+        #expect(!controller.makeMenu().items.contains { $0.title == "Wake up" })
+        #expect(!makeController(defaults: defaults).sleep.isAsleep(at: Date()))
+    }
+
+    @Test("Hiding the sleep slider in Settings wakes the icon")
+    func hidingSliderWakes() throws {
+        let defaults = try #require(UserDefaults(suiteName: "attention-buddy-app-sleep-\(UUID().uuidString)"))
+        let controller = makeController(defaults: defaults)
+        controller.startSleep(.fourHours)
+        controller.setSleepSliderShown(false)
+        #expect(!controller.sleep.isAsleep(at: Date()))
+        #expect(defaults.object(forKey: "showSleepSlider") as? Bool == false)
+        #expect(!makeController(defaults: defaults).sleep.isAsleep(at: Date()))
+    }
+
+    @Test("Sleep menu actions have neutral names, so macOS adds no icons")
+    func neutralNames() throws {
+        let defaults = try #require(UserDefaults(suiteName: "attention-buddy-app-sleep-\(UUID().uuidString)"))
+        let controller = makeController(defaults: defaults)
+        controller.startSleep(.fifteenMinutes)
+        let menu = controller.makeMenu()
+        let sleepItems = menu.items.first { $0.title == "Sleep" }?.submenu?.items ?? []
+        for item in menu.items + sleepItems where !item.isSeparatorItem {
+            #expect(item.image == nil)
+            let action = item.action.map(NSStringFromSelector)?.lowercased() ?? ""
+            #expect(!action.contains("sleep") && !action.contains("wake"), "\(item.title): \(action)")
+        }
+        controller.wakeUp()
+    }
+}
+
+@MainActor
+@Suite("Settings window: card")
+struct SettingsCardTests {
+    @Test("The card slider covers 1× to 2× and the checkbox starts checked")
+    func controls() {
+        let settings = SettingsWindow(scale: 3)
+        #expect(settings.cardSlider.minValue == 1)
+        #expect(settings.cardSlider.maxValue == 2)
+        #expect(settings.cardSizeLabel.stringValue == "1×")
+        #expect(settings.sleepSliderCheckbox.state == .on)
+    }
+
+    @Test("Moving the card slider and unchecking the box report the changes")
+    func reports() {
+        let settings = SettingsWindow(scale: 3, cardScale: 1, showsSleepSlider: true)
+        var sizes: [Double] = []
+        var shown: [Bool] = []
+        settings.onCardScaleChange = { sizes.append($0) }
+        settings.onSleepSliderChange = { shown.append($0) }
+        settings.cardSlider.doubleValue = 1.5
+        settings.cardSliderMoved()
+        settings.sleepSliderCheckbox.state = .off
+        settings.sleepSliderToggled()
+        #expect(sizes == [1.5])
+        #expect(settings.cardSizeLabel.stringValue == "1.5×")
+        #expect(shown == [false])
+        settings.update(scale: 3, cardScale: 2, showsSleepSlider: true)
+        #expect(settings.cardSizeLabel.stringValue == "2×")
+        #expect(settings.sleepSliderCheckbox.state == .on)
     }
 }

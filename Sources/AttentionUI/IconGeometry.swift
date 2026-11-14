@@ -33,6 +33,11 @@ public enum IconGeometry {
         CGRect(x: 18, y: 17, width: 1.513, height: 3),
     ]
 
+    /// How open the eyes are while asleep: a thin slit.
+    public static let sleepyEyeOpenness: CGFloat = 0.16
+    /// How far the arms turn down while asleep, in degrees.
+    public static let sleepingArmAngle: CGFloat = 72
+
     /// The point between the feet that jumps squash and stretch around.
     public static let feet = CGPoint(x: 12, y: 20)
 
@@ -57,16 +62,21 @@ public enum IconGeometry {
     }
 
     /// The body with its eye holes (fill it with the even-odd rule), in body-local points.
-    /// `eyeOpenness` is 1 for open eyes and close to 0 mid-blink.
-    public static func bodyPath(scale: CGFloat, eyeOpenness: CGFloat = 1) -> CGPath {
+    /// `eyeOpenness` is 1 for open eyes and close to 0 mid-blink. A blink closes toward the
+    /// middle of the eye; sleepy eyes (`lidsDown`) keep only a slit at the bottom.
+    public static func bodyPath(scale: CGFloat, eyeOpenness: CGFloat = 1, lidsDown: Bool = false) -> CGPath {
         let path = CGMutablePath()
         path.addRect(CGRect(x: 0, y: 0, width: body.width * scale, height: body.height * scale))
         for eye in eyes {
             let height = eye.height * eyeOpenness
+            var top = eye.midY - height / 2
+            if lidsDown {
+                top = eye.maxY - height
+            }
             path.addRect(
                 CGRect(
                     x: eye.minX * scale,
-                    y: (eye.midY - height / 2) * scale,
+                    y: top * scale,
                     width: eye.width * scale,
                     height: height * scale
                 ))

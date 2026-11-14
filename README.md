@@ -30,16 +30,16 @@
 </p>
 
 <p align="center">
-  <img src="docs/assets/states.svg" width="700" alt="Working, needs you, done, seen and error states">
+  <img src="docs/assets/states.svg" width="780" alt="Working, needs you, done, seen, error and asleep states">
 </p>
 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/hover-card-dark.svg">
-    <img src="docs/assets/hover-card-light.svg" width="700" alt="The session card: two sessions need you, one is done, one works in a terminal; click a session to open it">
+    <img src="docs/assets/hover-card-light.svg" width="700" alt="The session card: two sessions need you, one is done, one works in a terminal; click a session to open it; a sleep slider at the bottom">
   </picture>
   <br>
-  <sub>Hover over or click the icon to see every session, then click one to open it.</sub>
+  <sub>Hover over or click the icon to see every session, then click one to open it. Drag the slider at the bottom to let the buddy sleep for a while.</sub>
 </p>
 
 ## Why
@@ -57,6 +57,7 @@ while Claude works and starts blinking red and waving the moment any session nee
 - **Tiny and native.** One small Swift app, no web runtime, near-zero CPU.
 - **Private.** No network access. It never reads your prompts, code or tool output.
 - **One click to the right session.** Pick any session from the card and Claude opens it.
+- **Quiet when you need it.** Let it sleep for 15 minutes up to the rest of the day.
 
 ## What it shows
 
@@ -67,8 +68,10 @@ while Claude works and starts blinking red and waving the moment any session nee
 | **Seen** | steady red | you looked (switched to Claude or clicked the icon) but have not answered yet; goes back to blinking after 3 minutes |
 | **Done** | green, one happy hop | a session finished its turn |
 | **Error** | red, shakes its head | a turn failed, for example on an API error |
+| **Asleep** | grey, eyes almost closed, arms down, breathing, a floating "z" | you put it to sleep; nothing else shows until it wakes up |
 
 With several sessions, the icon shows the most urgent one: needs you, error, seen, done, working.
+While asleep it stays grey and silent, whatever the sessions do.
 
 ## How it works
 
@@ -147,12 +150,22 @@ repository's releases on GitHub (Watch → Custom → Releases); the app itself 
   second. (No hook reports renames, so the card reads the name from the desktop app.)
 - In the card, the **dot** of a session that needs you **blinks red**, a working session's dot
   breathes slowly, and the others stay steady.
+- **Sleep:** drag the slider at the bottom of the card to 15m, 30m, 45m, 1h, 2h, 4h or Today
+  (until midnight) and let go, or click a stop. The buddy turns grey, closes its eyes and stays
+  silent; sessions keep being tracked, and the card says until when it sleeps. It wakes up by
+  itself, with the card's **Wake up** button, or from the right-click menu, and then shows what
+  happened meanwhile right away. Dragging again changes the time. A sleep survives a restart and
+  a Quit. On a Force Touch trackpad you feel a light click at each stop.
 - **Right-click** it for "Show waiting sessions", "Mark all as seen", "Forget all sessions",
-  "Settings…", "About Attention Buddy" (opens this page), "Hide until next session" and "Quit".
+  "Sleep" (with the same durations), "Wake up" (while asleep), "Settings…", "About Attention
+  Buddy" (opens this page), "Hide until next session" and "Quit".
 - It starts near the **bottom-right corner** of your screen, just above the Dock.
-- **Resize** it in Settings…: a slider from the smallest size (1×) up to four times bigger (4×);
-  it starts at 2×. The icon changes live as you drag. It grows away from its nearest screen corner, so it stays in
-  place, and it keeps its size.
+- **Settings…** has three settings, all applied live and remembered:
+  - **Icon size:** from the smallest size (1×) up to four times bigger (4×); it starts at 2×. The
+    icon grows away from its nearest screen corner, so it stays in place.
+  - **Card size:** from 1× to 2×. Everything in the card grows together: text, dots, the sleep
+    slider and its button.
+  - **Show sleep slider in the session card:** on by default. Turning it off also wakes the buddy.
 
 Advanced settings, from a terminal:
 
@@ -191,7 +204,7 @@ which also ends a Quit:
 | Hooks | inside the plugin | added to `~/.claude/settings.json`, with a backup | added by `attention-buddy setup`, with a backup |
 | Starting the icon | with each Claude Code session | a login item, `~/Library/LaunchAgents/io.github.zahorovskyi.attention-buddy.plist`, and each Claude Code session | `brew services` at login, and each Claude Code session |
 | Session state | `~/.claude/attention-buddy/` | same | same |
-| Preferences (position, size) | `~/Library/Preferences/io.github.zahorovskyi.attention-buddy.plist` | same | same |
+| Preferences (position, sizes, sleep) | `~/Library/Preferences/io.github.zahorovskyi.attention-buddy.plist` | same | same |
 
 Nothing else. No network access, no telemetry, no accounts. To open the session you click and
 show its current name, the app also reads (never changes) the Claude desktop app's list of

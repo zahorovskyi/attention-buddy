@@ -9,7 +9,8 @@ import QuartzCore
 /// dragging, clicking and the right-click menu.
 ///
 /// Layer tree (all in a flipped, y-down space):
-/// canvas → motion (jump, squash, shake) → figure (bob, pulse, base opacity) → body, arms, legs.
+/// canvas → motion (jump, squash, shake) → figure (bob, pulse, breathing, base opacity) → body, arms, legs.
+/// Two "z" letters float above the head while asleep; they sit on the canvas so they don't breathe.
 @MainActor
 public final class IconView: NSView {
     /// Called on a click that was not a drag.
@@ -34,6 +35,8 @@ public final class IconView: NSView {
     let rightArmLayer = CAShapeLayer()
     private(set) var legLayersA: [CAShapeLayer] = []
     private(set) var legLayersB: [CAShapeLayer] = []
+    /// The two letters that float up while asleep.
+    private(set) var sleepLetters: [CATextLayer] = []
 
     var shapeLayers: [CAShapeLayer] {
         [bodyLayer, leftArmLayer, rightArmLayer] + legLayersA + legLayersB
@@ -102,6 +105,22 @@ public final class IconView: NSView {
             place(leg, rect)
             return leg
         }
+
+        // Each "z" starts just above the right side of the head and floats up from there.
+        let letterFrame = IconGeometry.canvasRect(CGRect(x: 19.5, y: 0.5, width: 4.5, height: 5), scale: scale)
+        sleepLetters = [0, 1].map { _ in
+            let letter = CATextLayer()
+            letter.string = "z"
+            letter.font = NSFont.systemFont(ofSize: 10, weight: .bold)
+            letter.fontSize = 4 * scale
+            letter.alignmentMode = .center
+            letter.foregroundColor = Palette.grey
+            letter.contentsScale = NSScreen.main?.backingScaleFactor ?? 2
+            letter.frame = letterFrame
+            letter.opacity = 0
+            canvasLayer.addSublayer(letter)
+            return letter
+        }
     }
 
     /// Adds a part to the figure at its artwork position, rotating around `pivot` if given.
@@ -125,23 +144,30 @@ public final class IconView: NSView {
 
     /// Switches colors and looping animations to `state`.
     public func show(_ state: IconState, animated: Bool, reduceMotion: Bool) {
+        let wasAsleep = shownState == .asleep
         shownState = state
         let style = IconStyle.forState(state)
 
+        // Falling asleep and waking up take about a second; other changes are quick.
         CATransaction.begin()
         CATransaction.setDisableActions(!animated)
-        CATransaction.setAnimationDuration(0.3)
+        CATransaction.setAnimationDuration(style.sleeps || wasAsleep ? 1 : 0.3)
         for part in shapeLayers {
             part.fillColor = style.color
         }
         figureLayer.opacity = style.opacity
+        applySleepingPose(style.sleeps)
         CATransaction.commit()
 
         figureLayer.removeAnimation(forKey: "pulse")
         figureLayer.removeAnimation(forKey: "bob")
+        figureLayer.removeAnimation(forKey: "breath")
         bodyLayer.removeAnimation(forKey: "blink")
         for leg in legLayersA + legLayersB {
             leg.removeAnimation(forKey: "step")
+        }
+        for letter in sleepLetters {
+            letter.removeAnimation(forKey: "float")
         }
 
         if style.pulses {
@@ -163,6 +189,30 @@ public final class IconView: NSView {
             let open = IconGeometry.bodyPath(scale: scale)
             let closed = IconGeometry.bodyPath(scale: scale, eyeOpenness: 0.1)
             bodyLayer.add(IconAnimations.blink(open: open, closed: closed), forKey: "blink")
+        }
+        if style.sleeps {
+            figureLayer.add(IconAnimations.sleepBreath(), forKey: "breath")
+            for (index, letter) in sleepLetters.enumerated() {
+                letter.add(IconAnimations.floatingZ(scale: scale, delay: Double(index) * 1.5), forKey: "float")
+            }
+        }
+    }
+
+    /// Eyes almost closed and arms hanging down while asleep; open eyes and arms out otherwise.
+    /// Inside a transaction, so the change animates when the caller allows it.
+    private func applySleepingPose(_ asleep: Bool) {
+        if asleep {
+            let angle = IconGeometry.sleepingArmAngle * .pi / 180
+            bodyLayer.path = IconGeometry.bodyPath(
+                scale: scale, eyeOpenness: IconGeometry.sleepyEyeOpenness, lidsDown: true)
+            // In this y-down space a positive angle turns clockwise: the right arm swings down
+            // clockwise, the left arm counterclockwise.
+            leftArmLayer.transform = CATransform3DMakeRotation(-angle, 0, 0, 1)
+            rightArmLayer.transform = CATransform3DMakeRotation(angle, 0, 0, 1)
+        } else {
+            bodyLayer.path = IconGeometry.bodyPath(scale: scale)
+            leftArmLayer.transform = CATransform3DIdentity
+            rightArmLayer.transform = CATransform3DIdentity
         }
     }
 

@@ -6,7 +6,7 @@ import AppKit
 
 /// Runs the floating icon: reads session state as soon as it changes (and twice a second as a
 /// fallback), updates the icon, marks waiting sessions as seen when the user looks at Claude,
-/// and handles clicks, the hover card and the menu.
+/// and handles clicks, the hover card, sleep and the menu.
 @MainActor
 public final class AppController: NSObject, NSApplicationDelegate {
     /// The Claude desktop app. Switching to it counts as "looking at" waiting sessions.
@@ -19,6 +19,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private var settingsWindow: SettingsWindow?
     private let preferences: UserDefaults
     private var seen: SeenTracker
+    /// While asleep the icon stays grey and silent; saved so it survives a restart.
+    private(set) var sleep: SleepSchedule
     private var scheduler: AnimationScheduler
     private var sessions: [SessionRecord] = []
     private var resolved: [(session: SessionRecord, state: IconState)] = []
@@ -49,7 +51,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
         self.preferences = preferences
         self.seen = SeenTracker(timeout: settings.seenTimeout)
         self.scheduler = AnimationScheduler(repeatInterval: settings.repeatInterval)
+        self.sleep = SleepSchedule(defaults: preferences)
         super.init()
+        hoverCard.scale = CGFloat(settings.cardScale)
+        hoverCard.showsSleepSlider = settings.showsSleepSlider
     }
 
     public func applicationDidFinishLaunching(_ notification: Notification) {
@@ -82,6 +87,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
             self.apply(inside ? self.presenter.pointerEnteredCard() : self.presenter.pointerExitedCard())
         }
         hoverCard.onSelectSession = { [weak self] sessionID in self?.openSession(sessionID) }
+        hoverCard.onChooseSleep = { [weak self] option in self?.startSleep(option) }
+        hoverCard.onWake = { [weak self] in self?.wakeUp() }
         // Clicks in other apps close a pinned card. (Monitors never see this app's own clicks.)
         outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(
             matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]
@@ -139,12 +146,69 @@ public final class AppController: NSObject, NSApplicationDelegate {
     /// Opens the Settings window. Deliberately not named `openSettings`: see `makeMenu()`.
     @objc private func openConfigurationWindow() {
         if settingsWindow == nil {
-            let window = SettingsWindow(scale: settings.scale)
+            let window = SettingsWindow(
+                scale: settings.scale, cardScale: settings.cardScale, showsSleepSlider: settings.showsSleepSlider)
             window.onScaleChange = { [weak self] scale in self?.resizeIcon(to: scale) }
+            window.onCardScaleChange = { [weak self] scale in self?.resizeCard(to: scale) }
+            window.onSleepSliderChange = { [weak self] shows in self?.setSleepSliderShown(shows) }
             settingsWindow = window
         }
-        settingsWindow?.update(scale: settings.scale)
+        settingsWindow?.update(
+            scale: settings.scale, cardScale: settings.cardScale, showsSleepSlider: settings.showsSleepSlider)
         settingsWindow?.show()
+    }
+
+    /// Resizes the session card and its sleep slider.
+    private func resizeCard(to scale: Double) {
+        guard scale != settings.cardScale else {
+            return
+        }
+        settings.cardScale = scale
+        preferences.set(scale, forKey: "cardScale")
+        hoverCard.scale = CGFloat(scale)
+        if hoverCard.isVisible {
+            showCard()
+        }
+    }
+
+    /// Shows or hides the sleep slider. Hiding it also wakes the icon, so a sleep never lingers
+    /// without its Wake up button.
+    func setSleepSliderShown(_ shows: Bool) {
+        settings.showsSleepSlider = shows
+        preferences.set(shows, forKey: "showSleepSlider")
+        hoverCard.showsSleepSlider = shows
+        if !shows && sleep.wakeAt != nil {
+            wakeUp()
+        }
+        if hoverCard.isVisible {
+            showCard()
+        }
+    }
+
+    // MARK: Sleep
+
+    /// Puts the icon to sleep (or changes how long). The card stays open, so the user sees it.
+    func startSleep(_ option: SleepOption) {
+        sleep.start(option, at: Date())
+        sleep.save(to: preferences)
+        refresh()
+    }
+
+    func wakeUp() {
+        sleep.wake()
+        sleep.save(to: preferences)
+        refresh()
+    }
+
+    @objc private func resumeFromMenu() {
+        wakeUp()
+    }
+
+    @objc private func durationChosen(_ item: NSMenuItem) {
+        guard let option = SleepOption(rawValue: item.tag) else {
+            return
+        }
+        startSleep(option)
     }
 
     // MARK: Session card
@@ -200,10 +264,16 @@ public final class AppController: NSObject, NSApplicationDelegate {
         guard let frame = panel?.frame else {
             return
         }
-        let content = HoverCardContent.make(from: withDesktopTitles(resolved, refresh: true)) {
+        var content = HoverCardContent.make(from: withDesktopTitles(resolved, refresh: true)) {
             [desktopSessions] session in
             desktopSessions.desktopID(for: session.id) != nil
         }
+        let now = Date()
+        let asleep = sleep.isAsleep(at: now)
+        if asleep, let wakeAt = sleep.wakeAt {
+            content.header = SleepText.cardHeader(content.header, wakeAt: wakeAt)
+        }
+        hoverCard.updateSleep(asleep: asleep, option: sleep.option, remaining: sleep.remainingText(at: now))
         hoverCard.show(content, near: frame)
     }
 
@@ -248,7 +318,15 @@ public final class AppController: NSObject, NSApplicationDelegate {
         sessions = store.load()
         seen.forget(sessionsNotIn: Set(sessions.map(\.id)))
         resolved = StateResolver.resolve(sessions, seen: seen, at: now)
-        let state = IconState.aggregate(resolved.map(\.state))
+        if sleep.wakeAt != nil && !sleep.isAsleep(at: now) {
+            sleep.wake()
+            sleep.save(to: preferences)
+        }
+        // Asleep, the icon stays grey and silent; on waking it shows the real state right away.
+        var state = IconState.aggregate(resolved.map(\.state))
+        if sleep.isAsleep(at: now) {
+            state = .asleep
+        }
 
         let update = scheduler.update(to: state, at: now, reduceMotion: reduceMotion)
         if update.stateChanged {
@@ -259,7 +337,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
         // VoiceOver reads the same text the session card shows. Titles already read from the
         // desktop app are used, but files are only re-read while the card is open.
-        let description = StateText.tooltip(for: withDesktopTitles(resolved, refresh: false))
+        var description = StateText.tooltip(for: withDesktopTitles(resolved, refresh: false))
+        if state == .asleep, let wakeAt = sleep.wakeAt {
+            description = SleepText.accessibilityPrefix(wakeAt: wakeAt) + "\n" + description
+        }
         if iconView?.accessibilityLabel() != description {
             iconView?.setAccessibilityLabel(description)
         }
@@ -324,12 +405,31 @@ public final class AppController: NSObject, NSApplicationDelegate {
         menu.addItem(actionItem("Mark all as seen", #selector(markAllSeen)))
         menu.addItem(actionItem("Forget all sessions", #selector(forgetSessions)))
         menu.addItem(.separator())
+        menu.addItem(sleepMenuItem())
+        if sleep.isAsleep(at: Date()) {
+            menu.addItem(actionItem("Wake up", #selector(resumeFromMenu)))
+        }
+        menu.addItem(.separator())
         menu.addItem(actionItem("Settings…", #selector(openConfigurationWindow)))
         menu.addItem(actionItem("About Attention Buddy \(AppVersion.current)", #selector(openAbout)))
         menu.addItem(.separator())
         menu.addItem(actionItem("Hide until next session", #selector(hideUntilNextSession)))
         menu.addItem(actionItem("Quit", #selector(quit)))
         return menu
+    }
+
+    /// "Sleep" with one item per duration. Action and item names stay neutral, see `makeMenu()`.
+    private func sleepMenuItem() -> NSMenuItem {
+        let submenu = NSMenu()
+        submenu.autoenablesItems = false
+        for option in SleepOption.allCases {
+            let item = actionItem(option.title, #selector(durationChosen(_:)))
+            item.tag = option.rawValue
+            submenu.addItem(item)
+        }
+        let parent = NSMenuItem(title: "Sleep", action: nil, keyEquivalent: "")
+        parent.submenu = submenu
+        return parent
     }
 
     @objc private func openAbout() {

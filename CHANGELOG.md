@@ -5,6 +5,18 @@ All notable changes to this project are documented here. Versions follow
 
 ## [Unreleased]
 
+## [0.1.9] - 2026-11-14
+
+- Sleep: a slider at the bottom of the session card puts the buddy to sleep for 15, 30 or 45
+  minutes, 1, 2 or 4 hours, or until midnight. Asleep it is grey with closed eyes, drooping arms,
+  slow breathing and a floating "z", and stays silent while sessions keep being tracked. It wakes
+  up by itself, with the card's Wake up button or from the right-click menu (new Sleep and Wake
+  up items), then shows the real state. A sleep survives a restart and a Quit.
+- Settings: a card size slider (1× to 2×) that scales the session card and its sleep slider, and
+  a checkbox to hide the sleep slider (hiding it also wakes the buddy).
+- The session card keeps a fixed width, so it no longer changes size when its summary grows.
+- README: the state picture adds Asleep, and the card and desktop pictures show the sleep slider.
+
 ## [0.1.8] - 2026-11-14
 
 - Fix: the session card showed small light square corners when open over a light window.

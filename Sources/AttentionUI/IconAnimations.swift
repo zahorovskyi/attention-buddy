@@ -29,6 +29,38 @@ public enum IconAnimations {
         return animation
     }
 
+    /// Slow sleepy breathing: the figure sinks a little and rises again ("asleep").
+    public static func sleepBreath() -> CABasicAnimation {
+        let animation = CABasicAnimation(keyPath: "transform.scale.y")
+        animation.fromValue = 1
+        animation.toValue = 0.95
+        animation.duration = 1.8
+        animation.autoreverses = true
+        animation.repeatCount = .infinity
+        animation.timingFunction = easeInOut
+        return animation
+    }
+
+    /// A "z" that rises, grows and fades away; two of them float half a cycle apart ("asleep").
+    public static func floatingZ(scale: CGFloat, delay: CFTimeInterval) -> CAAnimationGroup {
+        let rise = CAKeyframeAnimation(keyPath: "transform.translation.y")
+        rise.values = [0, -4 * scale]
+        let drift = CAKeyframeAnimation(keyPath: "transform.translation.x")
+        drift.values = [0, 1.5 * scale]
+        let grow = CAKeyframeAnimation(keyPath: "transform.scale")
+        grow.values = [0.6, 1.1]
+        let fade = CAKeyframeAnimation(keyPath: "opacity")
+        fade.values = [0, 1, 0]
+        fade.keyTimes = [0, 0.4, 1]
+        let group = CAAnimationGroup()
+        group.animations = [rise, drift, grow, fade]
+        group.duration = 3
+        group.repeatCount = .infinity
+        group.beginTime = CACurrentMediaTime() + delay
+        group.fillMode = .backwards
+        return group
+    }
+
     /// Moves one pair of legs up and down; the two pairs use opposite phases ("working").
     public static func step(phase: Int, scale: CGFloat) -> CAKeyframeAnimation {
         let lift = -1 * scale

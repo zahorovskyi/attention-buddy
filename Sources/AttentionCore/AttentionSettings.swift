@@ -10,12 +10,20 @@ public struct AttentionSettings: Equatable, Sendable {
     public var repeatInterval: TimeInterval
     /// Size of the icon: points per icon pixel. Key `scale`. Changed with the Settings slider.
     public var scale: Double
+    /// Size of the session card and its sleep slider, as a multiple of the normal size. Key
+    /// `cardScale`. Changed with the Settings slider.
+    public var cardScale: Double
+    /// Whether the session card shows the sleep slider. Key `showSleepSlider`. A Settings checkbox.
+    public var showsSleepSlider: Bool
 
     /// Allowed icon scales: the smallest size (1×) up to four times bigger (4×).
     public static let scaleRange: ClosedRange<Double> = 1.5...6
 
     /// The size a new install starts with: 2×.
     public static let defaultScale: Double = 3
+
+    /// Allowed card sizes: the normal size (1×) up to twice as big (2×).
+    public static let cardScaleRange: ClosedRange<Double> = 1...2
 
     public static let standard = AttentionSettings(seenTimeout: 180, repeatInterval: 15, scale: defaultScale)
 
@@ -33,15 +41,37 @@ public struct AttentionSettings: Equatable, Sendable {
         return String(format: "%.1f×", rounded)
     }
 
+    /// The card size shown next to its slider, for example "1×" or "1.5×".
+    public static func cardSizeLabel(forScale scale: Double) -> String {
+        let rounded = (scale * 10).rounded() / 10
+        if rounded == rounded.rounded() {
+            return "\(Int(rounded))×"
+        }
+        return String(format: "%.1f×", rounded)
+    }
+
+    /// Keeps a card scale inside `cardScaleRange`.
+    public static func clampedCardScale(_ scale: Double) -> Double {
+        min(max(scale, cardScaleRange.lowerBound), cardScaleRange.upperBound)
+    }
+
     /// Keeps a scale inside `scaleRange`.
     public static func clampedScale(_ scale: Double) -> Double {
         min(max(scale, scaleRange.lowerBound), scaleRange.upperBound)
     }
 
-    public init(seenTimeout: TimeInterval, repeatInterval: TimeInterval, scale: Double) {
+    public init(
+        seenTimeout: TimeInterval,
+        repeatInterval: TimeInterval,
+        scale: Double,
+        cardScale: Double = 1,
+        showsSleepSlider: Bool = true
+    ) {
         self.seenTimeout = seenTimeout
         self.repeatInterval = repeatInterval
         self.scale = scale
+        self.cardScale = cardScale
+        self.showsSleepSlider = showsSleepSlider
     }
 
     /// Reads the settings, keeping each value inside a sensible range.
@@ -51,7 +81,11 @@ public struct AttentionSettings: Equatable, Sendable {
             seenTimeout: Self.read("seenTimeout", from: defaults, default: standard.seenTimeout, range: 10...3600),
             repeatInterval: Self.read(
                 "repeatInterval", from: defaults, default: standard.repeatInterval, range: 5...600),
-            scale: Self.read("scale", from: defaults, default: standard.scale, range: Self.scaleRange)
+            scale: Self.read("scale", from: defaults, default: standard.scale, range: Self.scaleRange),
+            cardScale: Self.read(
+                "cardScale", from: defaults, default: standard.cardScale, range: Self.cardScaleRange),
+            showsSleepSlider: defaults.object(forKey: "showSleepSlider") == nil
+                ? standard.showsSleepSlider : defaults.bool(forKey: "showSleepSlider")
         )
     }
 

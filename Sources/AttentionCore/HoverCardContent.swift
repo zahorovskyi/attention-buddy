@@ -79,7 +79,7 @@ public struct HoverCardContent: Equatable, Sendable {
             return "All done"
         case .working:
             return "Claude is working"
-        case .idle, .needsYou:
+        case .idle, .needsYou, .asleep:
             return "All quiet"
         }
     }

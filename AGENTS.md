@@ -18,13 +18,19 @@ icon. Full design: [docs/DESIGN.md](docs/DESIGN.md).
 - **States:** dim clay and stepping while Claude works; red, blinking, jumping and waving when a
   session needs an approval, an answer or MCP input; steady red ("seen") once the user looked
   (switched to Claude or clicked the icon), back to blinking after 3 minutes; green with a hop when a turn is done; red with a head
-  shake when a turn failed. With several sessions it shows the most urgent one.
+  shake when a turn failed; grey with closed eyes and drooping arms while the user put it to
+  sleep. With several sessions it shows the most urgent one.
 - **Using it:** drag it anywhere (it starts at the bottom-right corner, above the Dock); hover or
   click it to open a card listing every session and what it needs; click a session in the card to
   open exactly that session in the Claude desktop app (terminal sessions are listed but can't be
   opened); in the card, dots of sessions that need you blink red; right-click for Show waiting sessions, Mark all as seen, Forget all sessions,
-  Settings…, About, Hide until next session and Quit.
-- **Settings…:** an icon size slider from 1× (smallest) to 4×; new installs start at 2×. Advanced timings
+  Sleep, Wake up (while asleep), Settings…, About, Hide until next session and Quit.
+- **Sleep:** the slider at the bottom of the card (or right-click → Sleep) silences the icon for
+  15, 30 or 45 minutes, 1, 2 or 4 hours, or until midnight. It wakes up by itself or with Wake up,
+  then shows the real state. Sessions keep being tracked meanwhile.
+- **Settings…:** an icon size slider from 1× (smallest) to 4× (new installs start at 2×), a card
+  size slider from 1× to 2× (the card and its sleep slider), and a checkbox to hide the sleep
+  slider (hiding it also wakes the icon). Advanced timings
   (`seenTimeout`, `repeatInterval`) are `defaults write io.github.zahorovskyi.attention-buddy …`
   values; see the README.
 - **Privacy:** no network access; only the event name, session id, tool name, folder and session
@@ -100,11 +106,11 @@ an organization policy that allows only managed hooks, or a missing `jq`.
 Layout:
 
 ```
-Sources/AttentionCore/     pure logic, no AppKit: state files, priority, seen timer, animation scheduler,
+Sources/AttentionCore/     pure logic, no AppKit: state files, priority, seen timer, sleep, animation scheduler,
                            settings and size range, placement, card content and open/close rules,
                            desktop session ids, titles and links, Quit note, update detection,
                            single-instance lock, doctor
-Sources/AttentionUI/       AppKit + Core Animation: floating window, icon layers and animations, session card,
+Sources/AttentionUI/       AppKit + Core Animation: floating window, icon layers and animations, session card, sleep slider,
                            Settings window, state folder watcher, app controller, PNG snapshots
 Sources/attention-buddy/   command-line entry point (run, setup, doctor, snapshot)
 Tests/                     Swift Testing suites

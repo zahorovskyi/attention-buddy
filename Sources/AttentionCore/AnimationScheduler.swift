@@ -49,7 +49,7 @@ public struct AnimationScheduler: Sendable {
             if changed {
                 animation = .shake
             }
-        case .idle, .working, .seen:
+        case .idle, .working, .seen, .asleep:
             animation = nil
         }
 

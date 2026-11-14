@@ -131,6 +131,8 @@ Each session maps to one icon state. With several sessions, the icon shows the h
 
 **needs you > error > seen > done > working > idle**
 
+While the user has put the icon to sleep it shows **asleep**, above everything; see "Sleep" below.
+
 ### "Seen"
 
 When the user switches to the Claude desktop app or clicks the icon, every waiting session is
@@ -152,12 +154,26 @@ never treated as seen.
 | seen | red | eye blink | none |
 | done | green `#46A758` | eye blink | hop with both arms up on entry |
 | error | red | none | head shake on entry |
+| asleep | grey `#8E8E93`, eyes a thin slit at the bottom, arms turned 72° down | slow breathing (the figure sinks 5% every 1.8 s), two "z" letters float up from the head | none; falling asleep and waking up fade over about a second |
 
-With macOS **Reduce Motion** on, only colors and the pulse remain.
+With macOS **Reduce Motion** on, only colors and the pulse remain (asleep keeps its still pose).
 
 The mascot is split into separate layers (body with eye holes, two arms, four legs) inside two
-containers: `motion` (jump, squash, shake) and `figure` (bob, pulse). Arms rotate around the
-shoulders and squash pivots between the feet. All animation runs in Core Animation on the GPU.
+containers: `motion` (jump, squash, shake) and `figure` (bob, pulse, breathing). Arms rotate
+around the shoulders and squash pivots between the feet. The sleeping "z" letters are text layers
+on the canvas, outside the figure, so they don't breathe. All animation runs in Core Animation on
+the GPU.
+
+### Sleep
+
+The user can put the icon to sleep for 15, 30 or 45 minutes, 1, 2 or 4 hours, or until the next
+local midnight ("Today"). While asleep (`SleepSchedule`) it is grey and silent: no red, no pulse,
+no jump. Hook events keep updating the session files, the card still lists every session, and its
+summary starts with "Asleep until 12:47". When the time is up, or the user presses Wake up or
+chooses it in the menu, the icon shows the real state at once, with its usual one-shot (a waiting
+session jumps and waves right away). The wake-up time and the chosen option are saved in the
+preferences, so a sleep survives a restart of the icon and a Quit. Choosing again changes the time.
+Turning the sleep slider off in Settings also wakes the icon.
 
 ## The window
 
@@ -178,6 +194,19 @@ shoulders and squash pivots between the feet. All animation runs in Core Animati
   summary line and one row per session, most urgent first: a dot in the state's color, the session
   name and what it needs, up to six rows plus "+N more sessions". It sits below the icon, or above
   it near the bottom of the screen, and updates live. VoiceOver reads the same text from the icon.
+  The card has a fixed width (316 points at 1×), so it doesn't jump when a summary gets longer;
+  long lines end in "…". Everything in it, the slider included, is multiplied by the card size
+  from Settings (1× to 2×).
+- **The sleep slider** sits at the bottom of the card, under a thin line, unless turned off in
+  Settings. Seven stops (15m, 30m, 45m, 1h, 2h, 4h, Today) sit on a track in the "night" color
+  `#7F77DD`. The status line above it reads "Sleep · Drag to choose" when awake, the stop's name
+  and wake-up time while dragging ("1 hour · until 12:47"), and "Asleep · 42 min" with a Wake up
+  button while asleep. The knob follows the pointer, the nearest stop lights up (with a light
+  `NSHapticFeedbackManager` click on a Force Touch trackpad), and on release a spring animation
+  settles it on that stop and the sleep starts; clicking a stop does the same. The slider and its
+  line stay in place when the rows above are rebuilt, and leaving the card mid-drag doesn't close
+  it until the drag ends. VoiceOver treats it as a slider that steps through the stops, and Wake
+  up as a button.
 - **Card dots** follow the icon's rhythm: a "needs you" dot blinks red with the icon's 1-second
   pulse (kept with Reduce Motion, as the main signal), a working dot breathes slowly (2.4 s, off
   with Reduce Motion), and seen, done, error and idle dots stay steady.
@@ -208,14 +237,16 @@ shoulders and squash pivots between the feet. All animation runs in Core Animati
   the titles already read. Terminal sessions, and desktop sessions without a title, keep the
   title from hook events, then the folder name.
 - **Right-click:** a menu of actions only: Show waiting sessions, Mark all as seen, Forget all
-  sessions, Settings…, About Attention Buddy (opens the project page), Hide until next session
-  and Quit. The sessions
+  sessions, Sleep (a submenu with the seven durations), Wake up (only while asleep), Settings…,
+  About Attention Buddy (opens the project page), Hide until next session and Quit. The sessions
   themselves are listed in the session card. No item has an icon, so all of them line up. macOS 26
   adds a symbol on its own to items whose action name looks standard (an action named
-  `openSettings` gets a gear and indents its whole group), so the Settings item's action has the
-  neutral name `openConfigurationWindow`; a test guards this.
-- **Settings…:** a small regular window; the app activates only while it is open. Its slider sets
-  the icon scale from 1.5 to 6 points per icon pixel, shown as 1× to 4×, and applies live. New
+  `openSettings` gets a gear and indents its whole group), so actions have neutral names:
+  `openConfigurationWindow`, `durationChosen(_:)` and `resumeFromMenu`; tests guard this.
+- **Settings…:** a small regular window; the app activates only while it is open. It has the icon
+  size slider, the card size slider (1× to 2×) and the "Show sleep slider in the session card"
+  checkbox, all applied live. The icon slider sets
+  the icon scale from 1.5 to 6 points per icon pixel, shown as 1× to 4×. New
   installs start at 3 (2×). Each
   change builds an icon view of the new size and resizes the window before attaching it, because
   attaching a view to a window first shrinks the view to the old window size and clips it. The
@@ -251,7 +282,10 @@ its range when read, so a hand-edited value can't break the app.
 | Key | Set by | Default | Range |
 | --- | --- | --- | --- |
 | `positionX`, `positionY` | dragging the icon | bottom-right corner | any spot on a connected screen |
-| `scale` | the Settings slider | 3 (2×) | 1.5 to 6 (1× to 4×) |
+| `scale` | the Settings icon size slider | 3 (2×) | 1.5 to 6 (1× to 4×) |
+| `cardScale` | the Settings card size slider | 1 | 1 to 2 |
+| `showSleepSlider` | the Settings checkbox | true | true or false |
+| `sleepUntil`, `sleepOption` | the sleep slider and the Sleep menu | not set (awake) | a time in seconds since 1970, and the chosen stop (0 to 6) |
 | `seenTimeout` | `defaults write` | 180 seconds | 10 to 3600 |
 | `repeatInterval` | `defaults write` | 15 seconds | 5 to 600 |
 
@@ -301,6 +335,8 @@ module; `#if canImport(...)` guards skip the cross-module imports SwiftPM needs.
 | Files, watched with file system events plus a 0.5 s poll | Unix socket | Simplest, no daemon protocol, survives restarts; reacting to folder events is instant and reading a few small files costs almost nothing. |
 | Custom session card | The system tooltip | System tooltips can't be styled or clicked; the card uses the popover material, follows light and dark mode, shows a colored dot per session and opens the one you click. |
 | Hover and click both open the card | Click opens the most urgent session | Choosing the session yourself is predictable with several sessions; hover gives a quick look. |
+| Sleep slider inside the card | A half-round dial in a second popup beside the icon | The card already opens on hover and click and knows where to go on screen; a second popup needed its own placement rules and covered more of the screen. |
+| Fixed card width | A width that follows the longest line | The card jumped wider when the summary grew, for example on falling asleep. |
 | Synchronous hooks | `async: true` | Event order matters more than the few milliseconds saved. |
 | `PermissionRequest` | `Notification` (`permission_prompt`) | Fires immediately instead of after about 6 seconds. |
 | Build from source | Prebuilt download | Unsigned downloads trigger Gatekeeper warnings; signing needs a paid developer account. |
@@ -322,8 +358,8 @@ module; `#if canImport(...)` guards skip the cross-module imports SwiftPM needs.
 
 | Layer | Tool | What it covers |
 | --- | --- | --- |
-| Core logic | Swift Testing (`Tests/AttentionCoreTests`) | State files, priority, the seen timer with a fixed clock, animation scheduling, dead-process cleanup, settings and the size range, placement (default spot, unplugged screens, the card, resizing without drift), card content and openable rows, desktop session ids, titles, renames and links, when the card opens and closes, the Quit note and the last restart, noticing an update (a moved, replaced or relinked program file), the single-instance lock, `doctor` |
-| Icon | Swift Testing (`Tests/AttentionUITests`) | Geometry, styles, animation definitions, layer setup, rendered pixels (state colors, transparent eye holes, the raised arm), the session card, its rounded shape, its clickable rows and dot animations (including Reduce Motion), the Settings slider, and resizing the real window without clipping |
+| Core logic | Swift Testing (`Tests/AttentionCoreTests`) | State files, priority, the seen timer with a fixed clock, animation scheduling, sleep (durations, midnight, saving, time left, texts, waking into the real state), dead-process cleanup, settings and the icon and card size ranges, placement (default spot, unplugged screens, the card, resizing without drift), card content and openable rows, desktop session ids, titles, renames and links, when the card opens and closes, the Quit note and the last restart, noticing an update (a moved, replaced or relinked program file), the single-instance lock, `doctor` |
+| Icon | Swift Testing (`Tests/AttentionUITests`) | Geometry, styles, animation definitions, layer setup, rendered pixels (state colors, transparent eye holes, the raised arm, sleepy eyes), the sleeping pose and its animations, the session card, its rounded shape and fixed width, its clickable rows and dot animations (including Reduce Motion), the sleep slider (stops, dragging, Wake up, labels that fit, VoiceOver, card size), the Sleep menu and hiding the slider, the Settings sliders and checkbox, and resizing the real window without clipping |
 | Hook script | bats (`ShellTests/hook.bats`) | Every event, tool-call matching (including answered questions), starting the icon at session start and respecting Quit, safe session ids, broken input, missing `jq`, 50 parallel events, stale locks, speed |
 | Installers and plugin | bats (`ShellTests/install.bats`) | Fresh install, keeping other hooks, running twice, removal, broken settings, plugin detection, dry run, uninstall, Homebrew paths, reinstalling by moving a fresh file into place, the plugin start script (Quit respected, `--manual` start) and its start command |
 | Repository | bats (`ShellTests/repo.bats`) | Versions match, the plugin name is allowed, every local documentation link works, the privacy check passes |

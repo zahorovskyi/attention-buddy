@@ -1,7 +1,8 @@
 /// What the floating icon shows.
 ///
 /// Cases are ordered by priority. When sessions are in different states, the icon shows
-/// the highest one: needs you > error > seen > done > working > idle.
+/// the highest one: needs you > error > seen > done > working > idle. `asleep` is never a
+/// session's state: it is what the icon shows while the user put it to sleep, above everything.
 public enum IconState: Int, Comparable, Sendable, CaseIterable {
     /// No session is doing anything yet.
     case idle
@@ -15,6 +16,8 @@ public enum IconState: Int, Comparable, Sendable, CaseIterable {
     case error
     /// A session needs the user: an approval, a question or other input.
     case needsYou
+    /// The user put the icon to sleep for a while: grey and silent, whatever the sessions do.
+    case asleep
 
     public static func < (lhs: IconState, rhs: IconState) -> Bool {
         lhs.rawValue < rhs.rawValue

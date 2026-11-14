@@ -14,6 +14,8 @@ public enum StateText {
             return "Stopped with an error"
         case .needsYou:
             return "Needs you"
+        case .asleep:
+            return "Asleep"
         }
     }
 
