@@ -173,7 +173,8 @@ shoulders and squash pivots between the feet. All animation runs in Core Animati
 
 ## Interaction
 
-- **The session card** (a separate borderless panel with the system popover material) has a
+- **The session card** (a separate borderless panel with the system popover material, shaped by a
+  rounded mask image: a layer corner radius would leave the blur behind it square) has a
   summary line and one row per session, most urgent first: a dot in the state's color, the session
   name and what it needs, up to six rows plus "+N more sessions". It sits below the icon, or above
   it near the bottom of the screen, and updates live. VoiceOver reads the same text from the icon.
@@ -322,7 +323,7 @@ module; `#if canImport(...)` guards skip the cross-module imports SwiftPM needs.
 | Layer | Tool | What it covers |
 | --- | --- | --- |
 | Core logic | Swift Testing (`Tests/AttentionCoreTests`) | State files, priority, the seen timer with a fixed clock, animation scheduling, dead-process cleanup, settings and the size range, placement (default spot, unplugged screens, the card, resizing without drift), card content and openable rows, desktop session ids, titles, renames and links, when the card opens and closes, the Quit note and the last restart, noticing an update (a moved, replaced or relinked program file), the single-instance lock, `doctor` |
-| Icon | Swift Testing (`Tests/AttentionUITests`) | Geometry, styles, animation definitions, layer setup, rendered pixels (state colors, transparent eye holes, the raised arm), the session card, its clickable rows and dot animations (including Reduce Motion), the Settings slider, and resizing the real window without clipping |
+| Icon | Swift Testing (`Tests/AttentionUITests`) | Geometry, styles, animation definitions, layer setup, rendered pixels (state colors, transparent eye holes, the raised arm), the session card, its rounded shape, its clickable rows and dot animations (including Reduce Motion), the Settings slider, and resizing the real window without clipping |
 | Hook script | bats (`ShellTests/hook.bats`) | Every event, tool-call matching (including answered questions), starting the icon at session start and respecting Quit, safe session ids, broken input, missing `jq`, 50 parallel events, stale locks, speed |
 | Installers and plugin | bats (`ShellTests/install.bats`) | Fresh install, keeping other hooks, running twice, removal, broken settings, plugin detection, dry run, uninstall, Homebrew paths, reinstalling by moving a fresh file into place, the plugin start script (Quit respected, `--manual` start) and its start command |
 | Repository | bats (`ShellTests/repo.bats`) | Versions match, the plugin name is allowed, every local documentation link works, the privacy check passes |

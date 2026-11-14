@@ -377,6 +377,22 @@ struct SessionCardClickTests {
         card.hide()
     }
 
+    @Test("The card is shaped by a rounded mask, so no square corners show behind it")
+    func cardHasRoundedMask() throws {
+        let card = HoverCard()
+        let mask = try #require(card.backgroundMask)
+        let radius = HoverCard.cornerRadius
+        #expect(mask.capInsets.top == radius)
+        #expect(mask.capInsets.left == radius)
+        #expect(mask.capInsets.bottom == radius)
+        #expect(mask.capInsets.right == radius)
+        #expect(mask.resizingMode == .stretch)
+        let corner = try #require(mask.bitmapAlpha(atX: 0, y: 0))
+        let middle = try #require(mask.bitmapAlpha(atX: radius, y: radius))
+        #expect(corner < 0.1)
+        #expect(middle > 0.9)
+    }
+
     @Test("Only openable rows highlight under the pointer and accept clicks")
     func openableRowsTrackThePointer() {
         let card = HoverCard()
@@ -423,5 +439,26 @@ struct CardDotTests {
     func reduceMotion() {
         #expect(row(.needsYou, reduceMotion: true).dot.layer?.animation(forKey: "pulse") != nil)
         #expect(row(.working, reduceMotion: true).dot.layer?.animation(forKey: "breathe") == nil)
+    }
+}
+
+extension NSImage {
+    /// The opacity of one pixel when drawn at its own size (origin bottom-left), for tests.
+    fileprivate func bitmapAlpha(atX x: CGFloat, y: CGFloat) -> CGFloat? {
+        let width = Int(size.width)
+        let height = Int(size.height)
+        guard
+            let bitmap = NSBitmapImageRep(
+                bitmapDataPlanes: nil, pixelsWide: width, pixelsHigh: height, bitsPerSample: 8,
+                samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB,
+                bytesPerRow: 0, bitsPerPixel: 0)
+        else {
+            return nil
+        }
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmap)
+        draw(in: NSRect(x: 0, y: 0, width: width, height: height))
+        NSGraphicsContext.restoreGraphicsState()
+        return bitmap.colorAt(x: Int(x), y: height - 1 - Int(y))?.alphaComponent
     }
 }

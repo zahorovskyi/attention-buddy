@@ -22,6 +22,25 @@ public final class HoverCard {
 
     /// Widest the session text may get before it is truncated.
     static let textWidth: CGFloat = 250
+    static let cornerRadius: CGFloat = 10
+
+    /// A small rounded rectangle that stretches to any size while keeping its corners.
+    static func roundedMask(radius: CGFloat) -> NSImage {
+        let edge = radius * 2 + 1
+        let image = NSImage(size: NSSize(width: edge, height: edge), flipped: false) { rect in
+            NSColor.black.setFill()
+            NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius).fill()
+            return true
+        }
+        image.capInsets = NSEdgeInsets(top: radius, left: radius, bottom: radius, right: radius)
+        image.resizingMode = .stretch
+        return image
+    }
+
+    /// The shape of the card, for tests.
+    var backgroundMask: NSImage? {
+        background.maskImage
+    }
     static let hint = "Click a session to open it"
 
     public init() {
@@ -43,8 +62,10 @@ public final class HoverCard {
         background.state = .active
         background.blendingMode = .behindWindow
         background.wantsLayer = true
-        background.layer?.cornerRadius = 10
-        background.layer?.masksToBounds = true
+        // A layer corner radius rounds what the view draws, but not the blur of what is behind
+        // the window, which stays square and shows in the corners over light apps. A mask image
+        // shapes both the blur and the window shadow.
+        background.maskImage = Self.roundedMask(radius: Self.cornerRadius)
         background.onPointerInside = { [weak self] inside in self?.onPointerInside?(inside) }
 
         stack.orientation = .vertical
@@ -83,6 +104,7 @@ public final class HoverCard {
             ?? NSScreen.main?.visibleFrame ?? iconFrame
         let frame = Placement.hoverCardFrame(cardSize: size, iconFrame: iconFrame, screen: screen)
         panel.setFrame(frame, display: true)
+        panel.invalidateShadow()
         panel.orderFrontRegardless()
     }
 

@@ -24,6 +24,12 @@
 </p>
 
 <p align="center">
+  <img src="docs/assets/desktop.svg" width="860" alt="A Mac desktop with the Claude app waiting for a command approval; Attention Buddy sits in the bottom-right corner above the Dock, red, with its session card open">
+  <br>
+  <sub>On your desktop: the icon waits in a corner, out of your way, until a session needs you. (Illustration with made-up sessions.)</sub>
+</p>
+
+<p align="center">
   <img src="docs/assets/states.svg" width="700" alt="Working, needs you, done, seen and error states">
 </p>
 

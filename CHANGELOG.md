@@ -5,9 +5,13 @@ All notable changes to this project are documented here. Versions follow
 
 ## [Unreleased]
 
+## [0.1.8] - 2026-11-14
+
+- Fix: the session card showed small light square corners when open over a light window.
 - Documentation: the Install and "What it changes" tables say the icon also starts with each
   Claude Code session for script and Homebrew installs; the design doc lists "Hide until next
   session" in the menu and the update-detection and installer tests.
+- README: new picture of a whole Mac desktop showing where the icon sits and how its card looks.
 
 ## [0.1.7] - 2026-11-14
 
