@@ -763,6 +763,24 @@ struct SettingsCardTests {
         #expect(settings.sleepSliderCheckbox.state == .on)
     }
 
+    @Test("Settings are evenly spaced, named in one font, and the window fits its content")
+    func layout() throws {
+        let settings = SettingsWindow(scale: 3)
+        let content = try #require(settings.window.contentView)
+        let stack = try #require(content.subviews.first as? NSStackView)
+        let lastLines = [stack.arrangedSubviews[1], stack.arrangedSubviews[3], settings.sleepSliderCheckbox]
+        #expect(
+            lastLines.map { stack.customSpacing(after: $0) } == Array(repeating: SettingsWindow.settingGap, count: 3))
+        content.layoutSubtreeIfNeeded()
+        #expect(abs(settings.window.contentLayoutRect.height - content.fittingSize.height) < 1)
+        let titles = [stack.arrangedSubviews[0], stack.arrangedSubviews[2]].compactMap {
+            ($0 as? NSStackView)?.arrangedSubviews.first as? NSTextField
+        }
+        #expect(titles.count == 2)
+        #expect(titles.allSatisfy { $0.font == SettingsWindow.titleFont })
+        #expect(settings.sleepSliderCheckbox.font == SettingsWindow.titleFont)
+    }
+
     @Test("Moving the card slider and unchecking the box report the changes")
     func reports() {
         let settings = SettingsWindow(scale: 3, cardScale: 1, showsSleepSlider: true)

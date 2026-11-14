@@ -5,6 +5,11 @@ All notable changes to this project are documented here. Versions follow
 
 ## [Unreleased]
 
+## [0.1.11] - 2026-11-14
+
+- Settings: every setting is the same distance from the next and named in the same font, and the
+  window no longer has empty space at the bottom.
+
 ## [0.1.10] - 2026-11-14
 
 - Fix: while Claude works, the legs now step in place as in the README picture. Their animation

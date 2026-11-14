@@ -55,6 +55,10 @@ public final class SettingsWindow: NSObject, NSWindowDelegate {
         window.isReleasedWhenClosed = false
         window.delegate = self
         window.contentView = makeContent()
+        // The window is exactly as tall as its content: no empty space under the last line.
+        if let content = window.contentView {
+            window.setContentSize(content.fittingSize)
+        }
 
         slider.target = self
         slider.action = #selector(sliderMoved)
@@ -73,6 +77,12 @@ public final class SettingsWindow: NSObject, NSWindowDelegate {
         sleepSliderCheckbox.target = self
         sleepSliderCheckbox.action = #selector(sleepSliderToggled)
     }
+
+    /// Every setting's name uses the same font, the checkbox's label included.
+    static let titleFont = NSFont.systemFont(ofSize: 13, weight: .semibold)
+
+    /// The space between one setting and the next.
+    static let settingGap: CGFloat = 18
 
     public var isVisible: Bool {
         window.isVisible
@@ -122,7 +132,7 @@ public final class SettingsWindow: NSObject, NSWindowDelegate {
         let iconRow = sliderRow(slider, low: "1×", high: "4×")
         let cardHeader = header("Card size", value: cardSizeLabel)
         let cardRow = sliderRow(cardSlider, low: "1×", high: "2×")
-        sleepSliderCheckbox.font = .systemFont(ofSize: 13)
+        sleepSliderCheckbox.font = Self.titleFont
         let hint = NSTextField(labelWithString: "Changes apply right away and are remembered.")
         hint.font = .systemFont(ofSize: 11)
         hint.textColor = .secondaryLabelColor
@@ -130,10 +140,11 @@ public final class SettingsWindow: NSObject, NSWindowDelegate {
         let stack = NSStackView(views: [iconHeader, iconRow, cardHeader, cardRow, sleepSliderCheckbox, hint])
         stack.orientation = .vertical
         stack.alignment = .leading
-        stack.spacing = 10
-        stack.setCustomSpacing(18, after: iconRow)
-        stack.setCustomSpacing(14, after: cardRow)
-        stack.setCustomSpacing(14, after: sleepSliderCheckbox)
+        // A title sits close to its slider; every setting is the same distance from the next.
+        stack.spacing = 8
+        for lastLineOfSetting in [iconRow, cardRow, sleepSliderCheckbox] {
+            stack.setCustomSpacing(Self.settingGap, after: lastLineOfSetting)
+        }
         stack.edgeInsets = NSEdgeInsets(top: 18, left: 20, bottom: 18, right: 20)
         stack.translatesAutoresizingMaskIntoConstraints = false
 
@@ -155,7 +166,7 @@ public final class SettingsWindow: NSObject, NSWindowDelegate {
 
     private func header(_ title: String, value: NSTextField) -> NSStackView {
         let label = NSTextField(labelWithString: title)
-        label.font = .systemFont(ofSize: 13, weight: .semibold)
+        label.font = Self.titleFont
         value.font = .monospacedDigitSystemFont(ofSize: 13, weight: .regular)
         value.textColor = .secondaryLabelColor
         value.alignment = .right
