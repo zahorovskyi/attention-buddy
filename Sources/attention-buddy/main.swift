@@ -35,6 +35,8 @@ func runIcon() -> Int32 {
         print("Attention Buddy is already running.")
         return 0
     }
+    // Any start (login item, Homebrew, a session start or by hand) ends an earlier Quit.
+    QuitNote(directory: directory).clear()
     let preferences = UserDefaults(suiteName: AttentionSettings.defaultsDomain) ?? .standard
     let controller = AppController(
         store: SessionStore(directory: directory),
@@ -97,7 +99,8 @@ func runDoctor() -> Int32 {
         installedPlugins: readFile(config.appendingPathComponent("plugins/installed_plugins.json")),
         jqAvailable: jqAvailable(),
         stateDirectoryWritable: FileManager.default.isWritableFile(atPath: stateDirectory.path),
-        iconRunning: InstanceLock.isHeld(at: InstanceLock.iconLockPath(in: stateDirectory))
+        iconRunning: InstanceLock.isHeld(at: InstanceLock.iconLockPath(in: stateDirectory)),
+        quitByUser: QuitNote(directory: stateDirectory).isActive
     )
     print("Attention Buddy \(AppVersion.current)")
     let checks = Doctor.checks(for: input)

@@ -23,7 +23,7 @@ icon. Full design: [docs/DESIGN.md](docs/DESIGN.md).
   click it to open a card listing every session and what it needs; click a session in the card to
   open exactly that session in the Claude desktop app (terminal sessions are listed but can't be
   opened); in the card, dots of sessions that need you blink red; right-click for Show waiting sessions, Mark all as seen, Forget all sessions,
-  Settings…, About and Quit.
+  Settings…, About, Hide until next session and Quit.
 - **Settings…:** an icon size slider from 1× (smallest) to 4×; new installs start at 2×. Advanced timings
   (`seenTimeout`, `repeatInterval`) are `defaults write io.github.zahorovskyi.attention-buddy …`
   values; see the README.
@@ -80,9 +80,12 @@ builds the icon, about 10 seconds), then run
   offer to remove them: `rm -rf ~/.claude/attention-buddy` and
   `defaults delete io.github.zahorovskyi.attention-buddy`.
 
-**After Quit** the icon stays closed. Start it again with a new Claude Code session (plugin),
-`launchctl kickstart gui/$(id -u)/io.github.zahorovskyi.attention-buddy` (install script) or
-`brew services restart attention-buddy` (Homebrew).
+**Closing the icon:** "Hide until next session" (right-click menu) returns with the next Claude
+Code session; "Quit" stays closed until the user next logs in (plugin installs: until a restart).
+Start it by hand, which also ends a Quit, with `/attention-buddy:start` in Claude Code (plugin),
+`attention-buddy` or `launchctl kickstart gui/$(id -u)/io.github.zahorovskyi.attention-buddy`
+(install script) or `brew services restart attention-buddy` (Homebrew). Restarting Claude Desktop
+doesn't start it.
 
 **If it does not react:** run `attention-buddy doctor`. Common causes are missing hooks,
 an organization policy that allows only managed hooks, or a missing `jq`.
@@ -94,12 +97,13 @@ Layout:
 ```
 Sources/AttentionCore/     pure logic, no AppKit: state files, priority, seen timer, animation scheduler,
                            settings and size range, placement, card content and open/close rules,
-                           desktop session ids, titles and links, single-instance lock, doctor
+                           desktop session ids, titles and links, Quit note, single-instance lock, doctor
 Sources/AttentionUI/       AppKit + Core Animation: floating window, icon layers and animations, session card,
                            Settings window, state folder watcher, app controller, PNG snapshots
 Sources/attention-buddy/   command-line entry point (run, setup, doctor, snapshot)
 Tests/                     Swift Testing suites
 hooks/                     the hook script and the plugin's hooks.json
+skills/start/              the plugin's /attention-buddy:start command
 scripts/                   build.sh (plain swiftc build), plugin-start.sh, check-privacy.sh
 ShellTests/                bats tests for the hook script, installer, plugin and repository checks
 install.sh                 installer for the one-line and clone methods; also used by `setup`

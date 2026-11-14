@@ -10,12 +10,18 @@
 # - It keeps only the event name, session id, tool name, working folder and session title.
 #   Prompts, code and tool output are never stored.
 # - Updates for one session are serialized with a lock folder and written atomically.
+#
+# On SessionStart it also starts the floating icon if it isn't running, unless the user chose
+# Quit since the last login (the `.quit` note). Script and Homebrew installs keep the app two
+# folders up from this script (<prefix>/share/attention-buddy/ next to <prefix>/bin/); the plugin
+# starts the icon with its own script instead.
 
 # jq programs are single-quoted on purpose: their $variables belong to jq, not the shell.
 # shellcheck disable=SC2016
 
 state_dir=${ATTENTION_BUDDY_DIR:-"$HOME/.claude/attention-buddy"}
 separator=$(printf '\037')
+script_dir=$(cd "$(dirname "$0")" 2>/dev/null && pwd)
 
 # Finds jq even when Claude Code was started with a minimal PATH.
 # ATTENTION_BUDDY_JQ overrides the search (used by the tests).
@@ -56,6 +62,26 @@ owner_pid() {
 #
 # Questions (AskUserQuestion) match by tool name only: Claude Code adds the user's answers to the
 # tool input after answering, and only one question can be open at a time.
+# True while a Quit counts: the note is newer than the last Mac start.
+quit_note_active() {
+  note="$state_dir/.quit"
+  [ -f "$note" ] || return 1
+  quit_at=$(tr -dc '0-9' <"$note")
+  [ -n "$quit_at" ] || return 1
+  boot=$(sysctl -n kern.boottime 2>/dev/null | sed -n 's/^{ sec = \([0-9]*\),.*/\1/p')
+  [ -n "$boot" ] || return 0
+  [ "$quit_at" -ge "$boot" ]
+}
+
+# Starts the icon in the background. If it is already running, the new copy sees the
+# single-instance lock and exits at once. ATTENTION_BUDDY_APP overrides the path (tests).
+start_icon() {
+  app=${ATTENTION_BUDDY_APP:-"$script_dir/../../bin/attention-buddy"}
+  [ -x "$app" ] || return 0
+  quit_note_active && return 0
+  nohup "$app" >/dev/null 2>&1 &
+}
+
 tool_key() {
   printf '%s' "$payload" |
     "$jq" -cS '[.tool_name, (if .tool_name == "AskUserQuestion" then null else .tool_input end)]' |
@@ -123,7 +149,10 @@ EOF
       rm -f "$file"
       return 0
       ;;
-    SessionStart) status=idle ;;
+    SessionStart)
+      start_icon
+      status=idle
+      ;;
     UserPromptSubmit | ElicitationResult) status=working ;;
     PostToolUse | PostToolUseFailure | PermissionDenied) status=working ;;
     PermissionRequest)

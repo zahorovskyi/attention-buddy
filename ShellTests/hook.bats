@@ -208,3 +208,68 @@ read_tool=',"tool_name":"Read","tool_input":{"file_path":"/x"}'
   echo "average: ${average} ms" >&3
   [ "$average" -lt 150 ]
 }
+
+# A fake app that records each start, to test the session-start launcher.
+fake_app() {
+  app="$BATS_TEST_TMPDIR/fake-app"
+  printf '#!/bin/sh\necho started >> "%s"\n' "$BATS_TEST_TMPDIR/starts.log" >"$app"
+  chmod +x "$app"
+  export ATTENTION_BUDDY_APP="$app"
+}
+
+# How many times the fake app started. With 1, waits up to 3 s for the start; with 0, waits
+# half a second so an unwanted start would have time to show up.
+starts() {
+  expected=${1:-0}
+  log="$BATS_TEST_TMPDIR/starts.log"
+  if [ "$expected" -eq 0 ]; then
+    sleep 0.5
+  fi
+  attempts=0
+  while [ "$expected" -gt 0 ] && [ ! -f "$log" ] && [ "$attempts" -lt 15 ]; do
+    sleep 0.2
+    attempts=$((attempts + 1))
+  done
+  if [ -f "$log" ]; then
+    wc -l <"$log" | tr -d ' '
+  else
+    echo 0
+  fi
+}
+
+@test "a session start starts the icon, silently" {
+  fake_app
+  send "$(event SessionStart)"
+  [ -z "$output" ]
+  [ "$(starts 1)" -eq 1 ]
+}
+
+@test "only session starts start the icon" {
+  fake_app
+  send "$(event UserPromptSubmit)"
+  send "$(event Stop)"
+  [ "$(starts)" -eq 0 ]
+}
+
+@test "after Quit, a session start leaves the icon closed" {
+  fake_app
+  mkdir -p "$ATTENTION_BUDDY_DIR"
+  date +%s >"$ATTENTION_BUDDY_DIR/.quit"
+  send "$(event SessionStart)"
+  [ "$(starts)" -eq 0 ]
+}
+
+@test "a Quit from before the last restart no longer blocks the start" {
+  fake_app
+  mkdir -p "$ATTENTION_BUDDY_DIR"
+  echo 1 >"$ATTENTION_BUDDY_DIR/.quit"
+  send "$(event SessionStart)"
+  [ "$(starts 1)" -eq 1 ]
+}
+
+@test "without the app next to the hook, a session start does nothing extra" {
+  export ATTENTION_BUDDY_APP="$BATS_TEST_TMPDIR/missing"
+  send "$(event SessionStart)"
+  [ "$status" -eq 0 ]
+  [ "$(state status)" = idle ]
+}

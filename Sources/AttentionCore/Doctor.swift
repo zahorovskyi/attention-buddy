@@ -29,6 +29,8 @@ public struct DoctorInput: Sendable {
     public var jqAvailable: Bool
     public var stateDirectoryWritable: Bool
     public var iconRunning: Bool
+    /// Whether the user chose Quit since the last login (see `QuitNote`).
+    public var quitByUser: Bool
 
     public init(
         userSettings: Data?,
@@ -36,7 +38,8 @@ public struct DoctorInput: Sendable {
         installedPlugins: Data?,
         jqAvailable: Bool,
         stateDirectoryWritable: Bool,
-        iconRunning: Bool
+        iconRunning: Bool,
+        quitByUser: Bool = false
     ) {
         self.userSettings = userSettings
         self.managedSettings = managedSettings
@@ -44,6 +47,7 @@ public struct DoctorInput: Sendable {
         self.jqAvailable = jqAvailable
         self.stateDirectoryWritable = stateDirectoryWritable
         self.iconRunning = iconRunning
+        self.quitByUser = quitByUser
     }
 }
 
@@ -104,12 +108,23 @@ public enum Doctor {
         if input.iconRunning {
             results.append(DoctorCheck(.ok, "The icon is running."))
         } else {
-            results.append(
-                DoctorCheck(
-                    .warning,
-                    "The icon is not running. Start it with a new Claude Code session (plugin), "
-                        + "`launchctl kickstart gui/$(id -u)/io.github.zahorovskyi.attention-buddy` (install script) "
-                        + "or `brew services restart attention-buddy` (Homebrew)."))
+            let start =
+                "`attention-buddy` or `launchctl kickstart gui/$(id -u)/io.github.zahorovskyi.attention-buddy` "
+                + "(install script), `brew services restart attention-buddy` (Homebrew) or "
+                + "`/attention-buddy:start` in Claude Code (plugin)."
+            if input.quitByUser {
+                results.append(
+                    DoctorCheck(
+                        .warning,
+                        "The icon is closed because you chose Quit. It starts again at your next login; "
+                            + "to start it now, use " + start))
+            } else {
+                results.append(
+                    DoctorCheck(
+                        .warning,
+                        "The icon is not running. It starts again with your next Claude Code session; "
+                            + "to start it now, use " + start))
+            }
         }
         return results
     }

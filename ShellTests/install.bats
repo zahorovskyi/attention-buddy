@@ -176,3 +176,41 @@ our_hook_count() {
   plugin_events=$(jq -r '.hooks | keys[]' "$ROOT/hooks/hooks.json" | sort)
   [ "$installer_events" = "$plugin_events" ]
 }
+
+plugin_setup() {
+  data="$BATS_TEST_TMPDIR/plugin-data"
+  export ATTENTION_BUDDY_DIR="$BATS_TEST_TMPDIR/state"
+  mkdir -p "$data/bin" "$ATTENTION_BUDDY_DIR"
+  cp "$ATTENTION_BUDDY_BINARY" "$data/bin/attention-buddy"
+  printf '%s\n' "$ROOT" >"$data/built-from"
+}
+
+@test "plugin: after Quit, a session start leaves the icon closed" {
+  plugin_setup
+  date +%s >"$ATTENTION_BUDDY_DIR/.quit"
+  run env CLAUDE_PLUGIN_ROOT="$ROOT" CLAUDE_PLUGIN_DATA="$data" sh "$ROOT/scripts/plugin-start.sh"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+  sleep 1
+  [ ! -s "$data/plugin.log" ]
+}
+
+@test "plugin: /attention-buddy:start ends a Quit, starts the icon and says so" {
+  plugin_setup
+  date +%s >"$ATTENTION_BUDDY_DIR/.quit"
+  run env CLAUDE_PLUGIN_ROOT="$ROOT" CLAUDE_PLUGIN_DATA="$data" sh "$ROOT/scripts/plugin-start.sh" --manual
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Attention Buddy is starting"* ]]
+  [ ! -e "$ATTENTION_BUDDY_DIR/.quit" ]
+  sleep 1
+  grep -q "fake attention-buddy" "$data/plugin.log"
+}
+
+@test "plugin: the start command is a user-only skill that runs the start script" {
+  skill="$ROOT/skills/start/SKILL.md"
+  [ -f "$skill" ]
+  grep -q '^name: start$' "$skill"
+  grep -q '^disable-model-invocation: true$' "$skill"
+  grep -q 'scripts/plugin-start.sh --manual' "$skill"
+  [ -x "$ROOT/scripts/plugin-start.sh" ]
+}

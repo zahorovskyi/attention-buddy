@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org).
 
+## [0.1.6] - 2026-11-14
+
+- New "Hide until next session" menu item: the icon comes back with your next Claude Code
+  session. "Quit" now keeps it closed, even for new sessions, until your next login.
+- Every install method now brings a hidden or crashed icon back when a Claude Code session
+  starts (before, only the plugin did).
+- New `/attention-buddy:start` command for plugin installs; any manual start ends a Quit.
+- `doctor` says when the icon is closed because you chose Quit.
+- README: "Starting the icon again" is now "Closing and starting the icon", with the same method
+  names as the Install table.
+
 ## [0.1.5] - 2026-11-14
 
 - The card shows a session's current name from Claude Desktop: a rename appears within about

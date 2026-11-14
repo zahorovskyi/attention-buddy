@@ -127,7 +127,7 @@ With the plugin, the app is not on your `PATH`; run it from the plugin's data fo
 - In the card, the **dot** of a session that needs you **blinks red**, a working session's dot
   breathes slowly, and the others stay steady.
 - **Right-click** it for "Show waiting sessions", "Mark all as seen", "Forget all sessions",
-  "Settings…", "About Attention Buddy" (opens this page) and "Quit".
+  "Settings…", "About Attention Buddy" (opens this page), "Hide until next session" and "Quit".
 - It starts near the **bottom-right corner** of your screen, just above the Dock.
 - **Resize** it in Settings…: a slider from the smallest size (1×) up to four times bigger (4×);
   it starts at 2×. The icon changes live as you drag. It grows away from its nearest screen corner, so it stays in
@@ -140,19 +140,27 @@ Advanced settings, from a terminal:
 | Seconds until "seen" asks again | 180 | `defaults write io.github.zahorovskyi.attention-buddy seenTimeout -float 300` |
 | Seconds between waves | 15 | `defaults write io.github.zahorovskyi.attention-buddy repeatInterval -float 30` |
 
-Restart the icon after changing these: right-click, Quit, then start it again (see
-[Starting the icon again](#starting-the-icon-again)). With **Reduce Motion** turned on in macOS, it
-keeps the colors and the blink but skips the animations.
+Restart the icon after changing these: right-click, choose "Hide until next session", then start
+a new Claude Code session. With **Reduce Motion** turned on in macOS, it keeps the colors and the
+blink but skips the animations.
 
-### Starting the icon again
+### Closing and starting the icon
 
-After **Quit**, the icon stays closed until you start it:
+The right-click menu has two ways to close the icon:
 
-| Installed with | Start it with |
+- **Hide until next session:** it comes back by itself with your next Claude Code session.
+- **Quit:** it stays closed, even when you start new sessions, until you next log in to your Mac
+  (a restart, or logging out and in). With the plugin, which has no login item, it comes back
+  after a restart.
+
+Restarting Claude Desktop doesn't bring it back either way. To start it yourself at any time,
+which also ends a Quit:
+
+| Method | Start it with |
 | --- | --- |
-| Plugin | start a new Claude Code session |
-| Install script | `launchctl kickstart gui/$(id -u)/io.github.zahorovskyi.attention-buddy`, or log in again |
-| Homebrew | `brew services restart attention-buddy` |
+| **Claude Code plugin** | `/attention-buddy:start` in Claude Code |
+| **One-line install** or **From a clone** | `attention-buddy`, or `launchctl kickstart gui/$(id -u)/io.github.zahorovskyi.attention-buddy` |
+| **Homebrew** | `brew services restart attention-buddy` |
 
 ## What it changes on your Mac
 
@@ -199,7 +207,9 @@ icon is running.
   its spot to the bottom-right corner: `defaults delete io.github.zahorovskyi.attention-buddy positionX`,
   then restart the icon.
 - **The icon is too small or too big.** Right-click it and choose Settings….
-- **The icon is gone after Quit.** See [Starting the icon again](#starting-the-icon-again).
+- **The icon is gone.** After "Hide until next session" it returns with your next session; after
+  Quit, at your next login. To start it now, see
+  [Closing and starting the icon](#closing-and-starting-the-icon).
 
 ## For AI agents
 

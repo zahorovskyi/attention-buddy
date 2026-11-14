@@ -315,6 +315,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
         menu.addItem(.separator())
         menu.addItem(actionItem("Settings…", #selector(openConfigurationWindow)))
         menu.addItem(actionItem("About Attention Buddy \(AppVersion.current)", #selector(openAbout)))
+        menu.addItem(.separator())
+        menu.addItem(actionItem("Hide until next session", #selector(hideUntilNextSession)))
         menu.addItem(actionItem("Quit", #selector(quit)))
         return menu
     }
@@ -346,7 +348,14 @@ public final class AppController: NSObject, NSApplicationDelegate {
         refresh()
     }
 
+    /// Closes the icon; the next Claude Code session starts it again.
+    @objc private func hideUntilNextSession() {
+        NSApp.terminate(nil)
+    }
+
+    /// Closes the icon until the next login: the note stops session starts from bringing it back.
     @objc private func quit() {
+        QuitNote(directory: store.directory).write()
         NSApp.terminate(nil)
     }
 

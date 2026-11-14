@@ -219,8 +219,26 @@ shoulders and squash pivots between the feet. All animation runs in Core Animati
   attaching a view to a window first shrinks the view to the old window size and clips it. The
   edges nearest the screen corner stay fixed, so the icon grows away from its corner, shrinking
   returns it exactly, and it is kept on screen.
-- **Quit:** exits cleanly. The login item and `brew services` restart the icon only after a crash,
-  not after Quit; the plugin starts it again with the next Claude Code session.
+- **Hide until next session:** exits cleanly. Every Claude Code session start brings the icon back
+  (see below), so it returns with the next session.
+- **Quit:** writes a Quit note, then exits. Session starts leave the icon closed while the note
+  counts, so it stays off until the next login. The login item and `brew services` restart the
+  icon only after a crash, not after either kind of close.
+- **The Quit note** (`QuitNote`) is a `.quit` file in the state folder holding the time of the
+  Quit. It counts while it is newer than the Mac's last start (`sysctl kern.boottime`). Every
+  start of the icon clears it: the login item and Homebrew at login, a manual start, or a session
+  start after a restart. The hook script and the plugin's start script apply the same rule in
+  `sh`. Plugin installs have no login item, so for them a Quit lasts until the next restart (or a
+  manual start), while logging out and in is enough for the other methods.
+- **Session starts bring the icon back** for every install method. On `SessionStart` the hook
+  script starts `<prefix>/bin/attention-buddy` in the background (two folders up from the hook
+  in script and Homebrew installs) unless the Quit note counts; the plugin's start script does
+  the same for plugin installs. If the icon already runs, the new copy sees the single-instance
+  lock and exits at once.
+- **Starting it by hand:** `attention-buddy` or `launchctl kickstart …` (install script),
+  `brew services restart attention-buddy` (Homebrew), or the plugin's `/attention-buddy:start`
+  command: a user-only plugin skill (`skills/start/SKILL.md`) that runs
+  `scripts/plugin-start.sh --manual`, which ends a Quit, starts the icon and prints one line.
 
 ## Preferences
 
@@ -239,7 +257,7 @@ its range when read, so a hand-edited value can't break the app.
 
 | Command | What it does |
 | --- | --- |
-| `attention-buddy` | Runs the icon. Exits at once if another copy holds the lock. |
+| `attention-buddy` | Runs the icon and ends an earlier Quit. Exits at once if another copy holds the lock. |
 | `attention-buddy setup` | Adds the hooks to `settings.json` via the bundled `install.sh --hooks-only`. |
 | `attention-buddy setup --remove` | Removes them again. |
 | `attention-buddy doctor` | Checks hooks (settings or plugin, or both), organization restrictions, `jq`, the state folder and whether the icon runs. |
@@ -251,10 +269,10 @@ All four share the same app code and hook script; only the installer differs.
 
 | Method | Hooks | Start | Notes |
 | --- | --- | --- | --- |
-| Claude Code plugin | `hooks/hooks.json`, inside the plugin | plugin `SessionStart` runs `scripts/plugin-start.sh` | Builds once per plugin version into `${CLAUDE_PLUGIN_DATA}` (kept across updates), in the background. Prints nothing, except one note if the Command Line Tools are missing. |
-| One-line install | `install.sh` merges them into `settings.json` | LaunchAgent | Downloads the latest release's source tarball. |
-| Clone | same script, local source | LaunchAgent | |
-| Homebrew | `attention-buddy setup` | `brew services` | The formula can't write to the home folder during install, hence the separate `setup` step. The hook path uses Homebrew's stable `opt` link so it survives upgrades. |
+| Claude Code plugin | `hooks/hooks.json`, inside the plugin | plugin `SessionStart` runs `scripts/plugin-start.sh`; `/attention-buddy:start` by hand | Builds once per plugin version into `${CLAUDE_PLUGIN_DATA}` (kept across updates), in the background. Prints nothing, except one note if the Command Line Tools are missing. |
+| One-line install | `install.sh` merges them into `settings.json` | LaunchAgent at login; the hook at each session start | Downloads the latest release's source tarball. |
+| Clone | same script, local source | LaunchAgent at login; the hook at each session start | |
+| Homebrew | `attention-buddy setup` | `brew services` at login; the hook at each session start | The formula can't write to the home folder during install, hence the separate `setup` step. The hook path uses Homebrew's stable `opt` link so it survives upgrades. |
 
 `install.sh` backs up `settings.json` before every change, is safe to run twice, removes only its
 own entries, aborts without changes on invalid JSON, and supports `--dry-run`. When the plugin is
@@ -299,10 +317,10 @@ module; `#if canImport(...)` guards skip the cross-module imports SwiftPM needs.
 
 | Layer | Tool | What it covers |
 | --- | --- | --- |
-| Core logic | Swift Testing (`Tests/AttentionCoreTests`) | State files, priority, the seen timer with a fixed clock, animation scheduling, dead-process cleanup, settings and the size range, placement (default spot, unplugged screens, the card, resizing without drift), card content and openable rows, desktop session ids, titles, renames and links, when the card opens and closes, the single-instance lock, `doctor` |
+| Core logic | Swift Testing (`Tests/AttentionCoreTests`) | State files, priority, the seen timer with a fixed clock, animation scheduling, dead-process cleanup, settings and the size range, placement (default spot, unplugged screens, the card, resizing without drift), card content and openable rows, desktop session ids, titles, renames and links, when the card opens and closes, the Quit note and the last restart, the single-instance lock, `doctor` |
 | Icon | Swift Testing (`Tests/AttentionUITests`) | Geometry, styles, animation definitions, layer setup, rendered pixels (state colors, transparent eye holes, the raised arm), the session card, its clickable rows and dot animations (including Reduce Motion), the Settings slider, and resizing the real window without clipping |
-| Hook script | bats (`ShellTests/hook.bats`) | Every event, tool-call matching (including answered questions), safe session ids, broken input, missing `jq`, 50 parallel events, stale locks, speed |
-| Installers and plugin | bats (`ShellTests/install.bats`) | Fresh install, keeping other hooks, running twice, removal, broken settings, plugin detection, dry run, uninstall, Homebrew paths, the plugin start script |
+| Hook script | bats (`ShellTests/hook.bats`) | Every event, tool-call matching (including answered questions), starting the icon at session start and respecting Quit, safe session ids, broken input, missing `jq`, 50 parallel events, stale locks, speed |
+| Installers and plugin | bats (`ShellTests/install.bats`) | Fresh install, keeping other hooks, running twice, removal, broken settings, plugin detection, dry run, uninstall, Homebrew paths, the plugin start script (Quit respected, `--manual` start) and its start command |
 | Repository | bats (`ShellTests/repo.bats`) | Versions match, the plugin name is allowed, every local documentation link works, the privacy check passes |
 | Homebrew | tap CI | `brew style`, `brew audit --strict`, build from source, `brew test` |
 | Repository | CI | `swift-format`, `shellcheck`, `claude plugin validate`, the privacy check and `gitleaks` |

@@ -335,7 +335,7 @@ struct MenuTests {
         #expect(
             titles == [
                 "Show waiting sessions", "Mark all as seen", "Forget all sessions", "-", "Settings…",
-                "About Attention Buddy \(AppVersion.current)", "Quit",
+                "About Attention Buddy \(AppVersion.current)", "-", "Hide until next session", "Quit",
             ])
     }
 
