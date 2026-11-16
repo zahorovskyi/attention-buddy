@@ -47,6 +47,8 @@ struct IconStyleTests {
         #expect(IconStyle.forState(.seen).color == Palette.red)
         #expect(IconStyle.forState(.error).color == Palette.red)
         #expect(IconStyle.forState(.done).color == Palette.green)
+        #expect(IconStyle.forState(.doneSeen) == IconStyle.forState(.done))
+        #expect(IconStyle.forState(.errorSeen) == IconStyle.forState(.error))
     }
 }
 

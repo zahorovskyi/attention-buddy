@@ -19,7 +19,8 @@ icon. Full design: [docs/DESIGN.md](docs/DESIGN.md).
   session needs an approval, an answer or MCP input; steady red ("seen") once the user looked
   (switched to Claude or clicked the icon), back to blinking after 3 minutes; green with a hop when a turn is done; red with a head
   shake when a turn failed; grey with closed eyes and drooping arms while the user put it to
-  sleep. With several sessions it shows the most urgent one.
+  sleep. With several sessions it shows the most urgent one. A done or failed turn ranks above
+  working only until the user looks at it, so old results never hide sessions still working.
 - **Using it:** drag it anywhere (it starts at the bottom-right corner, above the Dock); hover or
   click it to open a card listing every session and what it needs; click a session in the card to
   open exactly that session in the Claude desktop app (terminal sessions are listed but can't be

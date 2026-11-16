@@ -6,11 +6,11 @@ public enum StateText {
             return "Idle"
         case .working:
             return "Working"
-        case .done:
+        case .done, .doneSeen:
             return "Done"
         case .seen:
             return "Waiting for you"
-        case .error:
+        case .error, .errorSeen:
             return "Stopped with an error"
         case .needsYou:
             return "Needs you"

@@ -5,6 +5,13 @@ All notable changes to this project are documented here. Versions follow
 
 ## [Unreleased]
 
+## [0.1.12] - 2026-11-16
+
+- Fix: finished sessions no longer hide sessions that are still working. A done or failed turn
+  ranks above working only until you look at it (switch to Claude, click the icon or open the
+  session); after that the icon shows working while anything works. The card's summary says
+  "N sessions finished" for new results and "All done" only when every session is done.
+
 ## [0.1.11] - 2026-11-14
 
 - Settings: every setting is the same distance from the next and named in the same font, and the

@@ -13,7 +13,8 @@ public enum IconAnimation: Sendable, Equatable {
 /// Decides when to play one-shot animations as the icon's state changes over time.
 ///
 /// "Needs you" plays when it starts and then every `repeatInterval` while nobody responds.
-/// "Done" and "error" play once when they start. Reduce Motion turns all of them off.
+/// "Done" and "error" play once when they start; their "looked at" versions play nothing.
+/// Reduce Motion turns all of them off.
 public struct AnimationScheduler: Sendable {
     public var repeatInterval: TimeInterval
     public private(set) var current: IconState = .idle
@@ -49,7 +50,7 @@ public struct AnimationScheduler: Sendable {
             if changed {
                 animation = .shake
             }
-        case .idle, .working, .seen, .asleep:
+        case .idle, .working, .seen, .doneSeen, .errorSeen, .asleep:
             animation = nil
         }
 

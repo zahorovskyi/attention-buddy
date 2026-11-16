@@ -129,20 +129,34 @@ app's session files (see Interaction), using only the two ids and the title in e
 
 Each session maps to one icon state. With several sessions, the icon shows the highest:
 
-**needs you > error > seen > done > working > idle**
+**needs you > error > seen > done > working > done (looked at) > error (looked at) > idle**
+
+A finished or failed turn ranks above working only until the user looks at it (see "Seen"
+below). That way a fresh result shows up even while other sessions work, but an old one never
+hides a session that is still running. The looked-at states (`doneSeen`, `errorSeen`) look exactly
+like done and error; only their rank differs.
 
 While the user has put the icon to sleep it shows **asleep**, above everything; see "Sleep" below.
 
 ### "Seen"
 
-When the user switches to the Claude desktop app or clicks the icon, every waiting session is
-marked **seen**: the icon stops blinking and jumping and turns steady red. This avoids nagging
+When the user switches to the Claude desktop app, clicks the icon or opens a session from the
+card, the sessions involved (all of them, or the chosen one) are marked as looked at. A waiting
+session becomes **seen**: the icon stops blinking and jumping and turns steady red. This avoids nagging
 after the user has noticed, and covers a gap in the events: after you approve a long command, no
 event arrives until it finishes.
 
-A seen mark expires after **3 minutes** (`seenTimeout`), so a forgotten request asks for attention
-again. Looking again restarts the timer. A new request from the same session (a new `stamp`) is
-never treated as seen.
+A seen mark on a waiting session expires after **3 minutes** (`seenTimeout`), so a forgotten
+request asks for attention again. Looking again restarts the timer. A new request from the same
+session (a new `stamp`) is never treated as seen.
+
+A finished or failed session becomes **done (looked at)** or **error (looked at)** and drops below
+working. These marks never expire, because nothing is waiting on the user. The next event of that
+session (a new `stamp`) clears the mark, so its next finish counts as new again.
+
+The card's summary line follows the same order: "N sessions need you", "A session stopped with an
+error", "Waiting for your answer", "N sessions finished" (new results only), "Claude is working",
+"All done" (only when every session is a looked-at done) and otherwise "All quiet".
 
 ### Looks and animations
 
@@ -153,7 +167,9 @@ never treated as seen.
 | needs you | red `#E5484D` | pulse (fade in and out every second) | jump and right-arm wave on entry, then every 15 s |
 | seen | red | eye blink | none |
 | done | green `#46A758` | eye blink | hop with both arms up on entry |
+| done (looked at) | green | eye blink | none |
 | error | red | none | head shake on entry |
+| error (looked at) | red | none | none |
 | asleep | grey `#8E8E93`, eyes a thin slit at the bottom, arms turned 72° down | slow breathing (the figure sinks 5% every 1.8 s), two "z" letters float up from the head | none; falling asleep and waking up fade over about a second |
 
 With macOS **Reduce Motion** on, only colors and the pulse remain (asleep keeps its still pose).
@@ -209,17 +225,17 @@ Turning the sleep slider off in Settings also wakes the icon.
   up as a button.
 - **Card dots** follow the icon's rhythm: a "needs you" dot blinks red with the icon's 1-second
   pulse (kept with Reduce Motion, as the main signal), a working dot breathes slowly (2.4 s, off
-  with Reduce Motion), and seen, done, error and idle dots stay steady.
+  with Reduce Motion), and all other dots stay steady.
 - **When the card opens and closes** is decided by `CardPresenter`, a small state machine:
   - Hover: the card opens after 0.35 s and closes 0.25 s after the pointer has left both the icon
     and the card, so moving from the icon onto the card keeps it open.
   - Click on the icon: the card opens at once and is pinned. It stays open until the icon is
     clicked again, a session is chosen, or the user clicks anywhere else (a global mouse monitor
     sees clicks in other apps; it needs no special permission). Dragging the icon, resizing it or
-    opening the menu also closes it. The click also marks every waiting session as seen.
+    opening the menu also closes it. The click also marks every session as looked at.
 - **Choosing a session:** rows of desktop app sessions highlight under the pointer, show a `›` and
   open that exact session: `claude://code/needs-input?session=local_…` for a waiting session,
-  `claude://code/continue?session=local_…` otherwise. The chosen session is marked as seen.
+  `claude://code/continue?session=local_…` otherwise. The chosen session is marked as looked at.
   Sessions the desktop app doesn't know (terminal sessions) are dimmed, marked "in a terminal"
   and can't be clicked. If a link can't be built at click time, the app just brings Claude to the
   front.

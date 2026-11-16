@@ -20,8 +20,14 @@ struct HoverCardContentTests {
             ([.needsYou, .needsYou, .done], "2 sessions need you"),
             ([.error, .done], "A session stopped with an error"),
             ([.seen, .working], "Waiting for your answer"),
-            ([.done, .working], "All done"),
+            ([.done, .working], "1 session finished"),
+            ([.done, .done, .doneSeen], "2 sessions finished"),
+            ([.doneSeen, .doneSeen, .working], "Claude is working"),
+            ([.errorSeen, .working], "Claude is working"),
             ([.working, .idle], "Claude is working"),
+            ([.doneSeen, .doneSeen], "All done"),
+            ([.doneSeen, .idle], "All quiet"),
+            ([.errorSeen], "All quiet"),
             ([.idle], "All quiet"),
         ])
     func header(states: [IconState], expected: String) {

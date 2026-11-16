@@ -11,8 +11,14 @@ public enum StateResolver {
             }
             return .needsYou
         case .error:
+            if seen.isSeen(session, at: now) {
+                return .errorSeen
+            }
             return .error
         case .done:
+            if seen.isSeen(session, at: now) {
+                return .doneSeen
+            }
             return .done
         case .working:
             return .working

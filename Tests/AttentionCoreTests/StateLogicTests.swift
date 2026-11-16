@@ -22,6 +22,9 @@ struct PriorityTests {
         "The most urgent state wins",
         arguments: [
             ([IconState.working, .done], IconState.done),
+            ([.working, .doneSeen, .doneSeen], .working),
+            ([.working, .errorSeen], .working),
+            ([.doneSeen, .errorSeen, .idle], .doneSeen),
             ([.done, .seen], .seen),
             ([.seen, .error], .error),
             ([.error, .needsYou, .working], .needsYou),
@@ -29,6 +32,24 @@ struct PriorityTests {
         ])
     func priority(states: [IconState], expected: IconState) {
         #expect(IconState.aggregate(states) == expected)
+    }
+
+    @Test("The full order, lowest first")
+    func fullOrder() {
+        #expect(
+            IconState.allCases == [
+                .idle, .errorSeen, .doneSeen, .working, .done, .seen, .error, .needsYou, .asleep,
+            ])
+    }
+
+    @Test("Old finished sessions don't hide one that is still working")
+    func lookedAtDoneBelowWorking() {
+        var tracker = SeenTracker(timeout: 180)
+        let finished = [session("a", .done, stamp: "a1"), session("b", .done, stamp: "b1")]
+        tracker.markSeen(finished, at: start)
+        let resolved = StateResolver.resolve(finished + [session("c", .working)], seen: tracker, at: start)
+        #expect(IconState.aggregate(resolved.map(\.state)) == .working)
+        #expect(resolved.map(\.session.id).first == "c")
     }
 
     @Test("Each recorded status maps to an icon state")
@@ -89,7 +110,32 @@ struct SeenTrackerTests {
         #expect(!tracker.isSeen(session("a", .needs, stamp: "second"), at: start.addingTimeInterval(1)))
     }
 
-    @Test("Only waiting sessions can be marked seen")
+    @Test("A finished or failed turn becomes looked at, and the mark never expires")
+    func doneAndErrorSeen() {
+        var tracker = SeenTracker(timeout: 180)
+        let done = session("a", .done)
+        let failed = session("b", .error)
+        tracker.markSeen([done, failed], at: start)
+        let later = start.addingTimeInterval(86_400)
+        #expect(StateResolver.state(of: done, seen: tracker, at: later) == .doneSeen)
+        #expect(StateResolver.state(of: failed, seen: tracker, at: later) == .errorSeen)
+    }
+
+    @Test("A new finished turn from the same session is not looked at yet")
+    func newDoneClearsSeen() {
+        var tracker = SeenTracker(timeout: 180)
+        tracker.markSeen([session("a", .done, stamp: "first")], at: start)
+        #expect(StateResolver.state(of: session("a", .done, stamp: "second"), seen: tracker, at: start) == .done)
+    }
+
+    @Test("A mark from a finished turn doesn't carry over to a later request")
+    func doneMarkDoesNotCoverNeeds() {
+        var tracker = SeenTracker(timeout: 180)
+        tracker.markSeen([session("a", .done, stamp: "first")], at: start)
+        #expect(!tracker.isSeen(session("a", .needs, stamp: "second"), at: start))
+    }
+
+    @Test("Working and idle sessions can't be marked seen")
     func ignoresOtherStatuses() {
         var tracker = SeenTracker(timeout: 180)
         let working = session("a", .working)
@@ -130,11 +176,23 @@ struct AnimationSchedulerTests {
         #expect(scheduler.update(to: .error, at: start, reduceMotion: false).animation == .shake)
     }
 
-    @Test("Working, idle and seen have no one-shot animation", arguments: [IconState.working, .idle, .seen])
+    @Test(
+        "Working, idle and the seen states have no one-shot animation",
+        arguments: [IconState.working, .idle, .seen, .doneSeen, .errorSeen])
     func quietStates(state: IconState) {
         var scheduler = AnimationScheduler(repeatInterval: 15)
         _ = scheduler.update(to: .needsYou, at: start, reduceMotion: false)
         #expect(scheduler.update(to: state, at: start, reduceMotion: false).animation == nil)
+    }
+
+    @Test("Looking at a finished turn plays nothing; a new finish hops again")
+    func doneLookedAt() {
+        var scheduler = AnimationScheduler(repeatInterval: 15)
+        _ = scheduler.update(to: .done, at: start, reduceMotion: false)
+        #expect(
+            scheduler.update(to: .doneSeen, at: start, reduceMotion: false) == .init(stateChanged: true, animation: nil)
+        )
+        #expect(scheduler.update(to: .done, at: start, reduceMotion: false).animation == .celebrate)
     }
 
     @Test("Coming back to needs you from seen plays immediately")

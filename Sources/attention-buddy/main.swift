@@ -194,9 +194,9 @@ func runSnapshot(_ arguments: [String]) -> Int32 {
     let directory = URL(fileURLWithPath: folder, isDirectory: true)
     do {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        var images: [(name: String, state: IconState, pose: SnapshotRenderer.Pose)] = IconState.allCases.map {
-            ("\($0)", $0, .rest)
-        }
+        var images: [(name: String, state: IconState, pose: SnapshotRenderer.Pose)] = IconState.allCases
+            .filter { $0 != .doneSeen && $0 != .errorSeen }  // they look like done and error
+            .map { ("\($0)", $0, .rest) }
         images.append(("pose-waving", .needsYou, .waving))
         images.append(("pose-arms-up", .done, .armsUp))
         for image in images {

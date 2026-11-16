@@ -58,7 +58,8 @@ public struct HoverCardContent: Equatable, Sendable {
         return HoverCardContent(header: header(for: resolved.map(\.state)), rows: rows, overflow: overflow)
     }
 
-    /// A one-line summary of all sessions, for example "2 sessions need you".
+    /// A one-line summary of all sessions, for example "2 sessions need you", in the same order
+    /// as the icon's priority. "All done" only when every session is done.
     public static func header(for states: [IconState]) -> String {
         guard !states.isEmpty else {
             return "No Claude Code sessions yet"
@@ -70,17 +71,25 @@ public struct HoverCardContent: Equatable, Sendable {
         if waiting > 1 {
             return "\(waiting) sessions need you"
         }
-        switch IconState.aggregate(states) {
-        case .error:
+        if states.contains(.error) {
             return "A session stopped with an error"
-        case .seen:
-            return "Waiting for your answer"
-        case .done:
-            return "All done"
-        case .working:
-            return "Claude is working"
-        case .idle, .needsYou, .asleep:
-            return "All quiet"
         }
+        if states.contains(.seen) {
+            return "Waiting for your answer"
+        }
+        let finished = states.filter { $0 == .done }.count
+        if finished == 1 {
+            return "1 session finished"
+        }
+        if finished > 1 {
+            return "\(finished) sessions finished"
+        }
+        if states.contains(.working) {
+            return "Claude is working"
+        }
+        if states.allSatisfy({ $0 == .doneSeen }) {
+            return "All done"
+        }
+        return "All quiet"
     }
 }

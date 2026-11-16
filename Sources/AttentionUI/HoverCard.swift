@@ -366,7 +366,7 @@ final class SessionRowView: NSView {
             dot.heightAnchor.constraint(equalToConstant: 8 * scale),
         ])
         // Same rhythm as the icon: "needs you" blinks (kept with Reduce Motion, as the main
-        // signal); "working" breathes slowly; seen, done, error and idle stay steady.
+        // signal); "working" breathes slowly; the rest stay steady.
         switch row.state {
         case .needsYou:
             dot.layer?.add(IconAnimations.pulse(), forKey: "pulse")

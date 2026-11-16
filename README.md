@@ -66,11 +66,14 @@ while Claude works and starts blinking red and waving the moment any session nee
 | **Working** | dim clay color, legs stepping | Claude is working |
 | **Needs you** | red, blinking, jumps and waves every 15 s | a session asks for approval, asks a question, or an MCP server needs input |
 | **Seen** | steady red | you looked (switched to Claude or clicked the icon) but have not answered yet; goes back to blinking after 3 minutes |
-| **Done** | green, one happy hop | a session finished its turn |
-| **Error** | red, shakes its head | a turn failed, for example on an API error |
+| **Done** | green, one happy hop | a session finished its turn; once you looked, it stays green but ranks below working |
+| **Error** | red, shakes its head | a turn failed, for example on an API error; once you looked, it ranks below working |
 | **Asleep** | grey, eyes almost closed, arms down, breathing, a floating "z" | you put it to sleep; nothing else shows until it wakes up |
 
-With several sessions, the icon shows the most urgent one: needs you, error, seen, done, working.
+With several sessions, the icon shows the most urgent one: needs you, error, seen, done, working,
+then done and error results you already looked at. So a turn that just finished shows up even
+while other sessions work, but once you looked, an old result never hides a session that is still
+working. Looking means switching to Claude, clicking the icon or opening the session from the card.
 While asleep it stays grey and silent, whatever the sessions do.
 
 ## How it works

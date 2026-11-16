@@ -24,11 +24,11 @@ public struct IconStyle: Equatable {
             return IconStyle(color: Palette.clay, opacity: 0.55, pulses: false, walks: false, blinks: true)
         case .working:
             return IconStyle(color: Palette.clay, opacity: 0.55, pulses: false, walks: true, blinks: true)
-        case .done:
+        case .done, .doneSeen:
             return IconStyle(color: Palette.green, opacity: 1, pulses: false, walks: false, blinks: true)
         case .seen:
             return IconStyle(color: Palette.red, opacity: 1, pulses: false, walks: false, blinks: true)
-        case .error:
+        case .error, .errorSeen:
             return IconStyle(color: Palette.red, opacity: 1, pulses: false, walks: false, blinks: false)
         case .needsYou:
             return IconStyle(color: Palette.red, opacity: 1, pulses: true, walks: false, blinks: false)

@@ -1,10 +1,13 @@
 import Foundation
 
-/// Remembers which waiting sessions the user has already looked at.
+/// Remembers which sessions the user has already looked at.
 ///
-/// A session that needs the user becomes "seen" when the user switches to Claude or clicks
-/// the icon. The mark expires after `timeout`, so a forgotten request starts asking for
-/// attention again. A new request from the same session (a new stamp) clears the mark.
+/// A session that needs the user, finished its turn or stopped with an error becomes "seen"
+/// when the user switches to Claude, clicks the icon or opens the session from the card.
+/// A new event from the same session (a new stamp) clears the mark.
+///
+/// For a waiting session the mark expires after `timeout`, so a forgotten request starts asking
+/// for attention again. A finished or failed turn waits for nothing, so its mark never expires.
 public struct SeenTracker: Sendable {
     public var timeout: TimeInterval
     private var marks: [String: Mark] = [:]
@@ -18,19 +21,34 @@ public struct SeenTracker: Sendable {
         self.timeout = timeout
     }
 
-    /// Marks every session that currently needs the user as seen. Looking again restarts the timer.
+    /// Whether a session with `status` can be marked as seen.
+    public static func canBeSeen(_ status: SessionRecord.Status) -> Bool {
+        switch status {
+        case .needs, .done, .error:
+            return true
+        case .idle, .working:
+            return false
+        }
+    }
+
+    /// Marks every session that is waiting, done or stopped with an error as seen.
+    /// Looking again restarts the timer.
     public mutating func markSeen(_ sessions: [SessionRecord], at now: Date) {
-        for session in sessions where session.status == .needs {
+        for session in sessions where Self.canBeSeen(session.status) {
             marks[session.id] = Mark(stamp: session.stamp, markedAt: now)
         }
     }
 
-    /// Whether `session` is waiting and was seen less than `timeout` ago, for the same request.
+    /// Whether the user has looked at `session` since its last event. For a waiting session the
+    /// look counts only for `timeout`.
     public func isSeen(_ session: SessionRecord, at now: Date) -> Bool {
-        guard session.status == .needs, let mark = marks[session.id], mark.stamp == session.stamp else {
+        guard Self.canBeSeen(session.status), let mark = marks[session.id], mark.stamp == session.stamp else {
             return false
         }
-        return now.timeIntervalSince(mark.markedAt) < timeout
+        if session.status == .needs {
+            return now.timeIntervalSince(mark.markedAt) < timeout
+        }
+        return true
     }
 
     /// Drops marks for sessions that no longer exist.

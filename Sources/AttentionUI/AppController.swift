@@ -5,11 +5,11 @@ import AppKit
 #endif
 
 /// Runs the floating icon: reads session state as soon as it changes (and twice a second as a
-/// fallback), updates the icon, marks waiting sessions as seen when the user looks at Claude,
+/// fallback), updates the icon, marks sessions as seen when the user looks at Claude,
 /// and handles clicks, the hover card, sleep and the menu.
 @MainActor
 public final class AppController: NSObject, NSApplicationDelegate {
-    /// The Claude desktop app. Switching to it counts as "looking at" waiting sessions.
+    /// The Claude desktop app. Switching to it counts as "looking at" every session.
     public static let claudeBundleIdentifier = "com.anthropic.claudefordesktop"
     /// Opens Claude's "Sessions waiting for you" list.
     public static let waitingSessionsURL = ClaudeLinks.waitingSessions
@@ -349,7 +349,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func markWaitingSessionsSeen() {
+    private func markSessionsSeen() {
         seen.markSeen(sessions, at: Date())
         refresh()
     }
@@ -359,7 +359,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     @objc private func applicationActivated(_ notification: Notification) {
         let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
         if app?.bundleIdentifier == Self.claudeBundleIdentifier {
-            markWaitingSessionsSeen()
+            markSessionsSeen()
         }
     }
 
@@ -375,10 +375,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
         panel.setFrameOrigin(origin)
     }
 
-    /// A click opens (or closes) the session card, pinned open, and counts as looking at the
-    /// waiting sessions. Choosing a session in the card opens it in Claude.
+    /// A click opens (or closes) the session card, pinned open, and counts as looking at every
+    /// session. Choosing a session in the card opens it in Claude.
     private func iconClicked() {
-        markWaitingSessionsSeen()
+        markSessionsSeen()
         apply(presenter.iconClicked())
     }
 
@@ -446,12 +446,12 @@ public final class AppController: NSObject, NSApplicationDelegate {
     }
 
     @objc private func showWaitingSessions() {
-        markWaitingSessionsSeen()
+        markSessionsSeen()
         openWaitingSessions()
     }
 
     @objc private func markAllSeen() {
-        markWaitingSessionsSeen()
+        markSessionsSeen()
     }
 
     @objc private func forgetSessions() {
